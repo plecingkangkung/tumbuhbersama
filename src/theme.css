@@ -65,6 +65,15 @@ h3 {
   background: #fffdfb;
   border-color: var(--line);
   padding-top: 28px;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c5aed8 transparent;
+}
+.sidebar > * {
+  flex-shrink: 0;
 }
 .sidebar nav {
   gap: 6px;
@@ -80,17 +89,9 @@ h3 {
   width: 28px;
   height: 28px;
   border-radius: 9px;
-  background: var(--peach);
-  color: #a24e3e;
-  flex-shrink: 0;
-}
-.sidebar nav button:nth-child(3n + 2) > svg {
-  background: var(--mint);
-  color: var(--green);
-}
-.sidebar nav button:nth-child(3n) > svg {
   background: var(--lavender);
   color: var(--plum);
+  flex-shrink: 0;
 }
 .sidebar nav button.active {
   background: var(--lavender);
@@ -467,6 +468,17 @@ button:not(:disabled):active {
   }
   .workspace .page-heading h1 {
     font-size: 1.65rem;
+  }
+  .mobile-sidebar {
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #c5aed8 transparent;
+  }
+  .mobile-sidebar .sidebar {
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
   }
   .mobile-sidebar::backdrop {
     background: #42324b66;
