@@ -324,11 +324,6 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <Heart size={23} />
-          <h3>Setiap anak punya cerita.</h3>
-          <p>Catat momen kecil hari ini untuk dikenang esok hari.</p>
-        </div>
         <button
           className="logout"
           onClick={async () => {
@@ -681,6 +676,15 @@ export default function App() {
                 </>
               )}
             </>
+          )}
+          {tab === "Ringkasan" && (
+            <aside className="dashboard-note" aria-label="Pesan untuk keluarga">
+              <Heart size={24} aria-hidden="true" />
+              <div>
+                <h3>Setiap anak punya cerita.</h3>
+                <p>Catat momen kecil hari ini untuk dikenang esok hari.</p>
+              </div>
+            </aside>
           )}
           <footer>
             <Sprout size={16} /> Dibuat untuk menemani, selangkah demi

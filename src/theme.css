@@ -1,16 +1,16 @@
-/* Family palette: warm surfaces, coral actions, lavender navigation, mint growth. */
+/* Family palette: soft pink surfaces and purple accents across all components. */
 :root {
   --ink: #3e3545;
   --muted: #716674;
-  --paper: #fffaf6;
+  --paper: #fff6fb;
   --line: #eadfe5;
-  --coral: #b74739;
-  --coral-hover: #99382e;
-  --peach: #ffede3;
+  --rose: #b73978;
+  --rose-hover: #992e64;
+  --pink-soft: #ffe3f1;
   --lavender: #f0eafb;
   --plum: #684990;
-  --mint: #e6f4ec;
-  --green: #286b54;
+  --purple-soft: #eee6f4;
+  --purple-strong: #4f286b;
   --shadow: 0 5px 22px #674b6110;
   color: var(--ink);
   background: var(--paper);
@@ -20,7 +20,7 @@ body {
   background: var(--paper);
 }
 ::selection {
-  background: #f5cbbd;
+  background: #f5bdd9;
   color: #442b34;
 }
 button {
@@ -54,12 +54,12 @@ h3 {
   color: var(--muted);
 }
 .eyebrow {
-  color: #9d5044;
+  color: #9d4471;
   letter-spacing: 1.3px;
 }
 .brand,
 .mobile-header-brand {
-  color: var(--green);
+  color: var(--purple-strong);
 }
 .sidebar {
   background: #fffdfb;
@@ -99,18 +99,6 @@ h3 {
   border-color: #dccdeb;
   box-shadow: inset 3px 0 #9673b6;
 }
-.sidebar-note {
-  background: #fff0df;
-  color: #915426;
-  border: 1px solid #f0dcc5;
-  border-radius: 18px 18px 18px 5px;
-}
-.sidebar-note p {
-  color: #785e49;
-}
-.sidebar-note h3 {
-  color: #754723;
-}
 .topbar {
   background: #fffdfbf2;
   border-color: var(--line);
@@ -134,19 +122,19 @@ h3 {
   content: "";
   width: 9px;
   height: 9px;
-  background: #e5987d;
+  background: #e57db1;
   border-radius: 50%;
-  box-shadow: 4px -3px 0 #f5d7a5;
+  box-shadow: 4px -3px 0 #f5a5cd;
 }
 .primary,
 .workspace .primary {
-  background: var(--coral);
+  background: var(--rose);
   border-radius: 12px;
   color: white;
-  box-shadow: 0 4px 10px #b7473920;
+  box-shadow: 0 4px 10px #b7397820;
 }
 .primary:hover {
-  background: var(--coral-hover);
+  background: var(--rose-hover);
 }
 .secondary,
 .workspace .secondary {
@@ -164,7 +152,7 @@ h3 {
   border-radius: 10px;
 }
 .text-button {
-  color: #915042;
+  color: #91426a;
 }
 .card,
 .workspace .card {
@@ -173,25 +161,25 @@ h3 {
   box-shadow: var(--shadow);
 }
 .workspace .child-strip {
-  background: linear-gradient(105deg, #ffede3, #fff8ed 65%, #f1edf9);
-  border-color: #efd7c8;
+  background: linear-gradient(105deg, #ffe3f1, #ffedf6 65%, #f1edf9);
+  border-color: #efc8dc;
   border-radius: 18px;
 }
 .workspace .child-avatar {
-  background: #fffaf7;
-  color: #b65e45;
+  background: #fff7fb;
+  color: #b6457e;
   border-radius: 14px;
 }
 .child-label {
-  color: #946050;
+  color: #945072;
 }
 .child-choice[aria-pressed="true"] {
   background: var(--lavender);
   color: var(--plum);
 }
 .child-choice-avatar {
-  background: var(--peach);
-  color: #a35440;
+  background: var(--pink-soft);
+  color: #a34072;
 }
 .child-options,
 .account-panel,
@@ -201,47 +189,47 @@ h3 {
   box-shadow: 0 12px 35px #49344c1c;
 }
 .stats .stat:nth-child(1) {
-  background: #edf7f1;
-  border-color: #cfe6d8;
+  background: #f3edf7;
+  border-color: #dccfe6;
 }
 .stats .stat:nth-child(2) {
   background: #f3eefa;
   border-color: #e1d6ed;
 }
 .stats .stat:nth-child(3) {
-  background: #fff1e6;
-  border-color: #f0ddc8;
+  background: #ffe6f3;
+  border-color: #f0c8dc;
 }
 .stat strong {
-  color: #3f4144;
+  color: #423f44;
 }
 .stat small {
   color: #716674;
 }
 .stat-icon {
-  background: #d8ecdf;
-  color: var(--green);
+  background: #e4d8ec;
+  color: var(--purple-strong);
 }
 .stat-icon.height {
   background: #e6dbf4;
   color: var(--plum);
 }
 .stat-icon.head {
-  background: #f9dfbc;
-  color: #885721;
+  background: #f9bcdb;
+  color: #882155;
 }
 .growth-summary > div {
-  background: #faf5f1;
+  background: #faf1f5;
   border-radius: 12px;
 }
 .journal-dot {
-  background: var(--peach);
-  color: #a75643;
+  background: var(--pink-soft);
+  color: #a74375;
 }
 .forum-welcome {
-  background: #fff0e5;
-  border-color: #f1d9c6;
-  color: #875339;
+  background: #ffe5f2;
+  border-color: #f1c6dc;
+  color: #873960;
   border-radius: 18px;
 }
 .forum-avatar {
@@ -268,7 +256,7 @@ h3 {
   color: var(--ink);
 }
 .forum-like.is-liked {
-  background: #fbe6e9;
+  background: #fbe6f1;
   border-color: #eebbc8;
   color: #a83f60;
 }
@@ -312,8 +300,8 @@ textarea {
   color: #5f3c7d;
 }
 .select-option.is-active:not(.is-disabled) {
-  background: #f9ede7;
-  color: #7a4539;
+  background: #f9e7f0;
+  color: #7a395a;
 }
 .select-option.is-selected > svg {
   color: var(--plum);
@@ -333,8 +321,8 @@ textarea {
   border-radius: 12px;
 }
 .calendar-day.today > span:first-child {
-  color: #a44739;
-  background: #ffe4d6;
+  color: #a4396f;
+  background: #ffd6eb;
 }
 .calendar-day.selected {
   background: #f0e6f8;
@@ -347,9 +335,9 @@ textarea {
   color: #807482;
 }
 .calendar-alert {
-  background: #fff0da;
-  color: #81551c;
-  border-color: #f0d8b0;
+  background: #ffdaed;
+  color: #811c4f;
+  border-color: #f0b0d0;
   border-radius: 13px;
 }
 .calendar-event {
@@ -361,8 +349,8 @@ textarea {
   border-color: #b392c8;
 }
 .calendar-event-icon {
-  background: var(--mint);
-  color: var(--green);
+  background: var(--purple-soft);
+  color: var(--purple-strong);
 }
 .calendar-event-icon.doctor,
 .notification-icon.calendar {
@@ -370,13 +358,13 @@ textarea {
   color: var(--plum);
 }
 .calendar-editor {
-  background: #fff9f4;
-  border-color: #ebd6c7;
+  background: #fff4fa;
+  border-color: #ebc7d9;
   border-radius: 16px;
 }
 .milestone-groups fieldset {
-  background: #fffaf6;
-  border-color: #ecddcf;
+  background: #fff6fb;
+  border-color: #eccfde;
   border-radius: 15px;
 }
 .milestone-groups fieldset:nth-child(even) {
@@ -392,29 +380,29 @@ textarea {
   transition: background 160ms;
 }
 .milestone-item.is-observed {
-  background: #e8f3eb;
+  background: #eee8f3;
 }
 .milestone-item input {
-  accent-color: var(--green);
+  accent-color: var(--purple-strong);
 }
 .notification-menu[open] > summary {
   background: var(--lavender);
   color: var(--plum);
 }
 .notification-badge {
-  background: #b74739;
+  background: #b73978;
 }
 .notification-item.unread {
-  background: #fff3e9;
+  background: #ffe9f4;
 }
 .notification-item:hover {
   background: #f4edf9;
 }
 .notification-dot {
-  background: var(--coral);
+  background: var(--rose);
 }
 .auth-story {
-  background: linear-gradient(145deg, #ffeadc, #f8e7ef 60%, #ebe5f8);
+  background: linear-gradient(145deg, #ffdcee, #f8e7ef 60%, #f0e5f8);
 }
 .auth-story h1 {
   color: #644351;
@@ -427,7 +415,7 @@ textarea {
 }
 .captcha-field {
   border-color: var(--line);
-  background: #fffaf6;
+  background: #fff6fb;
 }
 @media (hover: hover) {
   .primary:not(:disabled):hover,
@@ -435,7 +423,7 @@ textarea {
     transform: translateY(-1px);
   }
   .sidebar nav button:not(.active):hover {
-    background: #f8f1ed;
+    background: #f8edf3;
     color: #72445b;
   }
   .article-card:hover {
@@ -446,8 +434,8 @@ textarea {
     transform: translateY(-2px);
   }
   .calendar-day:not(.selected):hover {
-    background: #fff0e6;
-    border-color: #dfb8a4;
+    background: #ffe6f3;
+    border-color: #dfa4c2;
   }
   .milestone-item:hover {
     background: #f1eaf7;
@@ -504,5 +492,50 @@ button:not(:disabled):active {
   .primary:not(:disabled):hover,
   .secondary:not(:disabled):hover {
     transform: none;
+  }
+}
+
+/* Dashboard keeps the family note alongside the child's overview. */
+.dashboard-note {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  margin-top: 22px;
+  border: 1px solid #ebd3e4;
+  border-radius: 18px;
+  background: linear-gradient(110deg, #fcecf4, #f2eafa);
+  color: #82548f;
+}
+.dashboard-note > svg {
+  flex-shrink: 0;
+  padding: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #fff8fc;
+}
+.dashboard-note h3 {
+  color: #684990;
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+.dashboard-note p {
+  color: #786079;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.sidebar .logout {
+  margin-top: auto;
+  padding-top: 24px;
+}
+@media (max-width: 760px) {
+  .dashboard-note {
+    padding: 16px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .mobile-sidebar .logout {
+    margin-top: 22px;
   }
 }

@@ -196,7 +196,7 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
                 points.filter((p) => p.day >= ds[0] && p.day <= ds.at(-1)),
               )}
               fill="none"
-              stroke="#087e80"
+              stroke="#7441a3"
               strokeWidth="3"
             />
           ))}
@@ -220,7 +220,7 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
                 cy={y(p.value)}
                 r={current?.record.id === p.record.id ? 5.5 : 4}
                 fill="white"
-                stroke="#087e80"
+                stroke="#7441a3"
                 strokeWidth="2.5"
               />
               <title>{`${p.record.date}: ${fmt(p.raw)} ${info.unit}, ${p.label}`}</title>
