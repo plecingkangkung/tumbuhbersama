@@ -110,6 +110,51 @@ test(
       for (const r of duplicates) assert.equal(r.data.like_count, 1);
       const second = await req(likesPath, "PUT", { liked: true }, b.cookie);
       assert.equal(second.data.like_count, 2);
+      assert.equal((await req("/notifications")).status, 401);
+      const inbox = await req("/notifications", "GET", undefined, a.cookie);
+      assert.equal(inbox.status, 200);
+      assert.equal(inbox.data.total, 1);
+      assert.equal(inbox.data.unread, 1);
+      assert.equal(inbox.data.items[0].kind, "like");
+      assert.equal(inbox.data.items[0].actor_name, "Mom B");
+      assert.equal(inbox.data.items[0].topic_id, topicId);
+      assert.equal(inbox.data.items[0].actor_id, undefined);
+      assert.equal(
+        (await req("/notifications", "GET", undefined, b.cookie)).data.total,
+        0,
+      );
+      const notificationId = inbox.data.items[0].id;
+      assert.equal(
+        (
+          await req(
+            "/notifications/" + notificationId + "/read",
+            "PUT",
+            {},
+            b.cookie,
+          )
+        ).status,
+        404,
+      );
+      assert.equal(
+        (
+          await req(
+            "/notifications/" + notificationId + "/read",
+            "PUT",
+            {},
+            a.cookie,
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (await req("/notifications", "GET", undefined, a.cookie)).data.unread,
+        0,
+      );
+      await req(likesPath, "PUT", { liked: true }, b.cookie);
+      assert.equal(
+        (await req("/notifications", "GET", undefined, a.cookie)).data.total,
+        1,
+      );
       const unlike = await req(likesPath, "PUT", { liked: false }, a.cookie);
       assert.equal(unlike.data.like_count, 1);
       assert.equal(unlike.data.liked, false);
@@ -163,6 +208,25 @@ test(
         b.cookie,
       );
       assert.equal(comment.status, 201);
+      const commentInbox = await req(
+        "/notifications",
+        "GET",
+        undefined,
+        a.cookie,
+      );
+      assert.equal(commentInbox.data.total, 2);
+      assert.equal(commentInbox.data.unread, 1);
+      assert.equal(commentInbox.data.items[0].kind, "comment");
+      await req("/notifications/read-all", "PUT", {}, b.cookie);
+      assert.equal(
+        (await req("/notifications", "GET", undefined, a.cookie)).data.unread,
+        1,
+      );
+      await req("/notifications/read-all", "PUT", {}, a.cookie);
+      assert.equal(
+        (await req("/notifications", "GET", undefined, a.cookie)).data.unread,
+        0,
+      );
       const thread = await req(
         "/forum/" + topicId + "/comments",
         "GET",
@@ -246,6 +310,14 @@ test(
         [topicId],
       );
       assert.equal(remainingLikes[0].n, 0);
+      const emptyInbox = await req(
+        "/notifications",
+        "GET",
+        undefined,
+        a.cookie,
+      );
+      assert.equal(emptyInbox.data.total, 0);
+      assert.equal(emptyInbox.data.unread, 0);
       assert.equal(
         (await req(likesPath, "PUT", { liked: true }, b.cookie)).status,
         404,

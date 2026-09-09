@@ -1,3 +1,4 @@
+import Notifications from "./Notifications";
 import ChildPicker from "./ChildPicker";
 import Forum from "./Forum";
 import Articles from "./Articles";
@@ -150,6 +151,7 @@ export default function App() {
     [selected, setSelected] = useState(""),
     [records, setRecords] = useState([]),
     [tab, setTab] = useState("Ringkasan"),
+    [forumTarget, setForumTarget] = useState({ id: "list", version: 0 }),
     [metric, setMetric] = useState("weight"),
     [modal, setModal] = useState(""),
     [register, setRegister] = useState(false),
@@ -366,7 +368,14 @@ export default function App() {
             <button
               key={name}
               className={tab === name ? "active" : ""}
-              onClick={() => setTab(name)}
+              onClick={() => {
+                setTab(name);
+                if (name === "Forum")
+                  setForumTarget((current) => ({
+                    id: "list",
+                    version: current.version + 1,
+                  }));
+              }}
             >
               <Icon size={20} />
               {name}
@@ -401,6 +410,16 @@ export default function App() {
             Ruang keluarga <span className="muted">/ {tab}</span>
           </span>
           <div className="flex items-center gap-3">
+            <Notifications
+              key={user.id}
+              onOpen={(id) => {
+                setForumTarget((current) => ({
+                  id,
+                  version: current.version + 1,
+                }));
+                setTab("Forum");
+              }}
+            />
             <span className="fine">{user.demo ? "MODE DEMO" : user.name}</span>
             <details
               className="account-menu"
@@ -450,7 +469,7 @@ export default function App() {
             </div>
           )}
           {tab === "Forum" ? (
-            <Forum />
+            <Forum key={forumTarget.version} initialTopic={forumTarget.id} />
           ) : tab === "Artikel" ? (
             <Articles />
           ) : (

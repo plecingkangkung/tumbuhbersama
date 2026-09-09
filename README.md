@@ -191,3 +191,15 @@ Tombol Suka tersedia pada kartu dan detail diskusi, menampilkan jumlah like sert
 Penyimpanan memakai tabel `forum_likes` dengan primary key gabungan `(topic_id,user_id)`: satu akun hanya memiliki satu like per diskusi, termasuk saat request diulang atau datang bersamaan. `PUT /api/forum/:id/like` menerima `{ "liked": true }` atau `{ "liked": false }`; hasil berisi `liked` dan `like_count`. User selalu diambil dari sesi server. Respons katalog/detail juga menyertakan kedua nilai tersebut, tanpa daftar identitas penyuka. Pembatasan like: 60 request per menit per IP.
 
 Untuk database lama, jalankan `server/migrations/002_forum_likes.sql` setelah migrasi forum pertama. Migrasi ini sudah diterapkan pada Laragon lokal. Schema instalasi baru juga sudah diperbarui. Like ikut dihapus ketika topik atau akun pemilik like dihapus. Pengujian mencakup akses tanpa login, validasi boolean, dua akun, duplikasi paralel, batal suka berulang, persistensi, serta penghapusan berantai.
+
+## Notifikasi dalam aplikasi
+
+Ikon lonceng pada header menampilkan balasan dan like dari pengguna lain pada diskusi milik akun yang sedang login. Aktivitas sendiri tidak membuat notifikasi. Notifikasi menampilkan nama pelaku dan judul topik; mengekliknya menandai dibaca dan membuka diskusi tersebut. Tersedia tandai semua dibaca, jumlah belum dibaca, serta pagination 20 notifikasi. Pembaruan dilakukan setiap 30 detik ketika halaman terlihat, saat jendela kembali aktif, atau saat panel dibuka. Ini notifikasi dalam aplikasi, bukan push browser, email, atau WhatsApp.
+
+Migrasi `server/migrations/003_notifications.sql` menambahkan tabel `notifications` dan tiga trigger MySQL. Trigger membuat notifikasi dalam transaksi yang sama dengan komentar/like, tidak memicu notifikasi ganda untuk like yang sudah ada, dan menghapus notifikasi saat like dibatalkan. Foreign key menghapus notifikasi jika topik, komentar, atau akun terkait dihapus. Migrasi sudah diterapkan pada Laragon MySQL 8.0.30; untuk instalasi lain jalankan dengan akun yang memiliki izin CREATE TABLE dan TRIGGER. `server/schema.sql` mencakup instalasi baru. Notifikasi dibuat untuk aktivitas setelah migrasi, tanpa mengisi ulang aktivitas lama.
+
+- `GET /api/notifications?page=1`: daftar pribadi, jumlah total, dan jumlah belum dibaca.
+- `PUT /api/notifications/:id/read`: tandai satu notifikasi milik sendiri dibaca.
+- `PUT /api/notifications/read-all`: tandai semua notifikasi milik sendiri dibaca.
+
+Semua endpoint memerlukan sesi. ID notifikasi akun lain menghasilkan 404 pada operasi baca. Mode demo menampilkan daftar kosong. Pengujian dua akun meliputi penerima yang benar, tidak ada notifikasi aktivitas sendiri, deduplikasi like, privasi, status baca, tandai semua dibaca, dan penghapusan bersama topik. Tes juga dijalankan melalui server lokal aktif.

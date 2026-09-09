@@ -587,8 +587,8 @@ function Discussion({ id, onBack }) {
     </>
   );
 }
-export default function Forum() {
-  const [view, setView] = useState("list"),
+export default function Forum({ initialTopic = "list" }) {
+  const [view, setView] = useState(initialTopic),
     [refresh, setRefresh] = useState(0);
   const back = () => {
     setView("list");

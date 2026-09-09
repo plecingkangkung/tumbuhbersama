@@ -1,3 +1,4 @@
+import { notificationRouter } from "./notifications.js";
 import { forumRouter } from "./forum.js";
 import { articles, articleSummaries } from "./articles.js";
 import "dotenv/config";
@@ -282,6 +283,7 @@ app.use("/api", (req, res, next) =>
     ? next()
     : res.status(401).json({ error: "Silakan masuk terlebih dahulu." }),
 );
+app.use("/api/notifications", notificationRouter({ query, demo }));
 app.use("/api/forum", forumRouter({ query, demo }));
 app.get("/api/articles", (req, res) => res.json(articleSummaries));
 app.get("/api/articles/:slug", (req, res) => {
