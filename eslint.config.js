@@ -19,7 +19,12 @@ export default defineConfig([
     rules: { "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z]" }] },
   },
   {
-    files: ["server/**/*.js", "vite.config.js"],
+    files: [
+      "server/**/*.js",
+      "shared/**/*.js",
+      "tools/*.mjs",
+      "vite.config.js",
+    ],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
   },

@@ -1,3 +1,4 @@
+import Milestones from "./Milestones";
 import Captcha from "./Captcha";
 import BrandMark from "./BrandMark";
 import ResponsiveSidebar from "./ResponsiveSidebar";
@@ -5,10 +6,11 @@ import Notifications from "./Notifications";
 import ChildPicker from "./ChildPicker";
 import Forum from "./Forum";
 import Articles from "./Articles";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import {
   Sprout,
   Menu,
+  ListChecks,
   LayoutDashboard,
   TrendingUp,
   BookHeart,
@@ -24,6 +26,7 @@ import {
   Weight,
   CircleUserRound,
 } from "lucide-react";
+const GrowthChart = lazy(() => import("./GrowthChart"));
 const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -65,86 +68,6 @@ function age(dob) {
   return m < 1
     ? "Di bawah 1 bulan"
     : `${Math.floor(m / 12) ? Math.floor(m / 12) + " tahun " : ""}${m % 12} bulan`;
-}
-function Chart({ records, metric }) {
-  if (!records.length)
-    return (
-      <div className="empty">
-        Grafik akan muncul setelah pengukuran pertama ditambahkan.
-      </div>
-    );
-  const values = records.map((r) => Number(r[metric])),
-    min = Math.max(0, Math.min(...values) - 1),
-    max = Math.max(...values) + 1;
-  const points = values.map((v, i) => [
-    60 + (records.length === 1 ? 280 : (i / (records.length - 1)) * 560),
-    190 - ((v - min) / (max - min)) * 145,
-  ]);
-  return (
-    <svg
-      viewBox="0 0 660 235"
-      role="img"
-      aria-label={`Grafik ${metric}: ${records.map((r) => date(r.date) + " " + r[metric]).join(", ")}`}
-      className="chart"
-    >
-      {[0, 1, 2, 3].map((i) => (
-        <g key={i}>
-          <line
-            x1="55"
-            y1={45 + i * 48}
-            x2="625"
-            y2={45 + i * 48}
-            stroke="#e8edf0"
-            strokeDasharray="4 5"
-          />
-          <text x="7" y={50 + i * 48} fill="#74828a" fontSize="13">
-            {(max - (i * (max - min)) / 3).toFixed(1)}
-          </text>
-        </g>
-      ))}
-      {points.length > 1 && (
-        <path
-          d={`M ${points[0][0]},190 L ${points.map((p) => p.join(",")).join(" L ")} L ${points.at(-1)[0]},190 Z`}
-          fill="#e5f6f3"
-        />
-      )}
-      <polyline
-        points={points.map((p) => p.join(",")).join(" ")}
-        fill="none"
-        stroke="#138575"
-        strokeWidth="3"
-      />
-      {points.map((p, i) => (
-        <g key={i}>
-          <circle
-            cx={p[0]}
-            cy={p[1]}
-            r="5"
-            fill="#fff"
-            stroke="#138575"
-            strokeWidth="3"
-          />
-          <title>
-            {date(records[i].date)}: {values[i]}
-          </title>
-          {(i === 0 || i === points.length - 1 || points.length < 7) && (
-            <text
-              x={p[0]}
-              y="222"
-              textAnchor="middle"
-              fontSize="12"
-              fill="#74828a"
-            >
-              {new Date(records[i].date + "T12:00:00").toLocaleDateString(
-                "id-ID",
-                { day: "numeric", month: "short" },
-              )}
-            </text>
-          )}
-        </g>
-      ))}
-    </svg>
-  );
 }
 export default function App() {
   const [captchaVersion, setCaptchaVersion] = useState(0);
@@ -373,6 +296,7 @@ export default function App() {
             ["Ringkasan", LayoutDashboard],
             ["Pertumbuhan", TrendingUp],
             ["Jurnal perkembangan", BookHeart],
+            ["Milestone", ListChecks],
             ["Kunjungan", CalendarDays],
             ["Artikel", BookOpen],
             ["Forum", MessagesSquare],
@@ -593,7 +517,7 @@ export default function App() {
                           <div>
                             <h2>Cerita pertumbuhan</h2>
                             <p className="muted text-sm">
-                              Perubahan dari pengukuran yang kamu catat.
+                              Pantau pengukuran si kecil bersama persentil WHO.
                             </p>
                           </div>
                           <select
@@ -608,13 +532,41 @@ export default function App() {
                             <option value="head">Lingkar kepala (cm)</option>
                           </select>
                         </div>
-                        <Chart records={measurements} metric={metric} />
-                        <p className="fine">
-                          ● Hasil pengukuran pribadi · Bukan kurva standar atau
-                          penilaian medis.
-                        </p>
+                        <Suspense
+                          fallback={<p className="empty">Memuat kurva WHO…</p>}
+                        >
+                          <GrowthChart
+                            key={child.id}
+                            child={child}
+                            records={measurements}
+                            metric={metric}
+                            onPosition={async (recordId, position) => {
+                              const updated = await api(
+                                "/children/" +
+                                  child.id +
+                                  "/records/" +
+                                  recordId +
+                                  "/position",
+                                {
+                                  method: "PUT",
+                                  body: JSON.stringify({
+                                    height_position: position,
+                                  }),
+                                },
+                              );
+                              setRecords((current) =>
+                                current.map((r) =>
+                                  r.id === updated.id ? updated : r,
+                                ),
+                              );
+                            }}
+                          />
+                        </Suspense>
                       </section>
                     </>
+                  )}
+                  {tab === "Milestone" && (
+                    <Milestones key={child.id} child={child} />
                   )}
                   {tab === "Pertumbuhan" && (
                     <section className="card">
@@ -653,6 +605,12 @@ export default function App() {
                           <div>
                             <span className="eyebrow">MOMEN BERHARGA</span>
                             <h2>Jurnal perkembangan</h2>
+                            <button
+                              className="text-button"
+                              onClick={() => setTab("Milestone")}
+                            >
+                              Buka checklist sesuai usia
+                            </button>
                           </div>
                           <button
                             className="icon-button"
@@ -850,6 +808,20 @@ export default function App() {
                         max="220"
                         step="0.1"
                       />
+                      <label className="field">
+                        <span>Posisi pengukuran panjang / tinggi</span>
+                        <select name="height_position" required defaultValue="">
+                          <option value="" disabled>
+                            Pilih posisi saat diukur
+                          </option>
+                          <option value="recumbent">
+                            Telentang (panjang badan)
+                          </option>
+                          <option value="standing">
+                            Berdiri (tinggi badan)
+                          </option>
+                        </select>
+                      </label>
                       <Field
                         label="Lingkar kepala (cm)"
                         name="head"

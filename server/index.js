@@ -1,3 +1,4 @@
+import { milestoneRouter } from "./milestones.js";
 import { authCaptcha } from "./captcha.js";
 import { createServer } from "node:http";
 import { attachRealtime } from "./realtime.js";
@@ -137,6 +138,7 @@ async function dropSession(req) {
       for (const [id, c] of children)
         if (c.user_id === previous.user.id) {
           children.delete(id);
+          milestones.clear(id);
           for (const [rid, r] of records)
             if (r.child_id === id) records.delete(rid);
         }
@@ -367,6 +369,31 @@ app.post("/api/children", async (req, res) => {
     );
   res.status(201).json(c);
 });
+const milestones = milestoneRouter({ query, demo, owned, validDate, nowDate });
+app.use("/api/children/:id/milestones", milestones.router);
+app.put("/api/children/:id/records/:recordId/position", async (req, res) => {
+  await owned(req.params.id, req.user);
+  const position = req.body.height_position;
+  if (!["recumbent", "standing"].includes(position))
+    throw fail("Pilih posisi ukur telentang atau berdiri.");
+  const row = demo
+    ? records.get(req.params.recordId)
+    : (
+        await query("SELECT * FROM records WHERE id=? AND child_id=?", [
+          req.params.recordId,
+          req.params.id,
+        ])
+      )[0];
+  if (!row || row.child_id !== req.params.id || row.kind !== "measurement")
+    throw fail("Pengukuran tidak ditemukan.", 404);
+  if (demo) row.height_position = position;
+  else
+    await query(
+      "UPDATE records SET height_position=? WHERE id=? AND child_id=?",
+      [position, row.id, req.params.id],
+    );
+  res.json({ ...row, height_position: position });
+});
 app.get("/api/children/:id/records", async (req, res) => {
   await owned(req.params.id, req.user);
   res.json(
@@ -407,6 +434,11 @@ app.post("/api/children/:id/records", async (req, res) => {
     r.weight = numeric(b.weight, 0.1, 150);
     r.height = numeric(b.height, 10, 220);
     r.head = numeric(b.head, 10, 100);
+    if (
+      b.height_position != null &&
+      !["recumbent", "standing"].includes(b.height_position)
+    )
+      throw fail("Posisi ukur tidak valid.");
     const existing = demo
       ? [...records.values()].find(
           (x) => x.child_id === child.id && x.kind === kind && x.date === date,
@@ -435,11 +467,13 @@ app.post("/api/children/:id/records", async (req, res) => {
         throw fail("Kategori tidak valid.");
     }
   }
+  r.height_position =
+    kind === "measurement" ? (b.height_position ?? null) : null;
   if (demo) records.set(r.id, r);
   else {
     try {
       await query(
-        "INSERT INTO records(id,child_id,kind,date,weight,height,head,title,category,notes) VALUES(?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO records(id,child_id,kind,date,weight,height,head,title,category,notes,height_position) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
         Object.values(r),
       );
     } catch (e) {

@@ -2104,3 +2104,229 @@ th {
 .captcha-field input[name="captcha_answer"] {
   letter-spacing: 3px;
 }
+
+.growth-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+.growth-summary > div {
+  background: #f3f7f6;
+  border: 1px solid #e2ebe7;
+  padding: 12px;
+  border-radius: 10px;
+}
+.growth-summary span {
+  display: block;
+  color: #647b76;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.growth-summary strong {
+  font-size: 21px;
+  font-weight: 650;
+}
+.growth-summary small {
+  font-size: 12px;
+  font-weight: 400;
+}
+.growth-toolbar,
+.growth-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.growth-toolbar label,
+.percentile-detail label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.growth-toolbar select,
+.percentile-detail select {
+  font-size: 12px;
+  padding: 7px;
+}
+.who-chart-scroll {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.who-chart {
+  display: block;
+  width: 100%;
+  min-width: 550px;
+  height: auto;
+}
+.who-chart text {
+  fill: #657781;
+  font-size: 11px;
+}
+.who-chart .percentile-label {
+  fill: #96516d;
+  font-size: 10px;
+}
+.who-chart g[role="button"] {
+  cursor: pointer;
+  outline: none;
+}
+.who-chart g[role="button"]:focus-visible circle {
+  stroke: #204bc0;
+  stroke-width: 4px;
+}
+.growth-legend {
+  font-size: 11px;
+  color: #587470;
+  justify-content: flex-start;
+  margin: 10px 0 16px;
+  gap: 16px;
+}
+.growth-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.growth-legend i {
+  width: 17px;
+  height: 3px;
+  background: #087e80;
+}
+.growth-legend .reference i {
+  background: #e7a8c0;
+  height: 10px;
+}
+.percentile-detail {
+  border: 1px solid #daebe5;
+  background: #f3faf7;
+  border-radius: 10px;
+  padding: 14px;
+}
+.percentile-value {
+  display: block;
+  font-size: 25px;
+  color: #126d61;
+  margin: 10px 0 3px;
+}
+.percentile-value span {
+  font-size: 12px;
+  font-weight: 400;
+  display: inline-block;
+  margin-left: 8px;
+}
+.growth-position {
+  margin-top: 10px;
+}
+.growth-caution {
+  font-size: 12px;
+  color: #855d26;
+  margin-top: 8px;
+  line-height: 1.6;
+}
+.growth-explanation {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #607772;
+}
+.growth-explanation summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.growth-explanation p {
+  margin-top: 8px;
+}
+.growth-explanation a {
+  color: #137e6e;
+  text-decoration: underline;
+}
+.milestone-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 20px 0 10px;
+}
+.milestone-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+}
+.milestone-guidance {
+  padding: 12px 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #637b75;
+}
+.milestone-count {
+  color: #137e6e;
+  font-size: 13px;
+  margin: 14px 0;
+  font-weight: 600;
+}
+.milestone-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.milestone-groups fieldset {
+  border: 1px solid #dfe9e6;
+  border-radius: 12px;
+  padding: 6px 14px 12px;
+  min-width: 0;
+}
+.milestone-groups legend {
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #367a6a;
+}
+.milestone-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eef2f0;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.milestone-item:last-child {
+  border: 0;
+}
+.milestone-item input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #137e6e;
+  flex-shrink: 0;
+}
+.milestone-item small {
+  display: block;
+  color: #7b8e87;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.milestone-item.is-observed small {
+  color: #137e6e;
+}
+@media (max-width: 760px) {
+  .milestone-groups {
+    grid-template-columns: 1fr;
+  }
+  .growth-summary {
+    gap: 6px;
+  }
+  .growth-summary > div {
+    padding: 10px 8px;
+  }
+  .growth-summary strong {
+    font-size: 17px;
+  }
+  .growth-summary span {
+    font-size: 11px;
+  }
+}

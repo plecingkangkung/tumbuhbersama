@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS children (
 CREATE TABLE IF NOT EXISTS records (
  id CHAR(36) PRIMARY KEY, child_id CHAR(36) NOT NULL,
  kind ENUM('measurement','journal','visit') NOT NULL, date DATE NOT NULL,
+ height_position ENUM('recumbent','standing') NULL,
  weight DECIMAL(5,2), height DECIMAL(5,1), head DECIMAL(4,1), title VARCHAR(150), category VARCHAR(40), notes TEXT,
  measurement_date DATE GENERATED ALWAYS AS (CASE WHEN kind='measurement' THEN date ELSE NULL END) STORED,
  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -91,4 +92,13 @@ CREATE TABLE IF NOT EXISTS auth_captchas (
  answer_hash CHAR(64) NOT NULL,
  expires_at DATETIME NOT NULL,
  INDEX(expires_at)
+);
+
+CREATE TABLE IF NOT EXISTS child_milestones (
+ child_id CHAR(36) NOT NULL,
+ milestone_id VARCHAR(40) NOT NULL,
+ observed_date DATE NOT NULL,
+ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ PRIMARY KEY(child_id,milestone_id),
+ FOREIGN KEY(child_id) REFERENCES children(id) ON DELETE CASCADE
 );
