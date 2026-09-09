@@ -629,3 +629,16 @@ button:not(:disabled):active {
     flex: 1;
   }
 }
+.measurement-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.measurement-actions .measurement-delete {
+  color: #a23870;
+  border-color: #ebc9dd;
+}
+.measurement-actions .measurement-delete:hover {
+  background: #fce7f2;
+}

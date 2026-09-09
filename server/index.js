@@ -481,6 +481,71 @@ app.get("/api/children/:id/records", async (req, res) => {
         ),
   );
 });
+async function ownedMeasurement(req) {
+  const child = await owned(req.params.id, req.user);
+  const row = demo
+    ? records.get(req.params.recordId)
+    : (
+        await query(
+          "SELECT * FROM records WHERE id=? AND child_id=? AND kind='measurement'",
+          [req.params.recordId, child.id],
+        )
+      )[0];
+  if (!row || row.child_id !== child.id || row.kind !== "measurement")
+    throw fail("Pengukuran tidak ditemukan.", 404);
+  return { child, row };
+}
+app.put("/api/children/:id/records/:recordId", async (req, res) => {
+  const { child, row } = await ownedMeasurement(req),
+    b = req.body,
+    date = validDate(b.date);
+  if (date < child.dob || date > nowDate())
+    throw fail("Tanggal pengukuran harus antara kelahiran dan hari ini.");
+  if (!["recumbent", "standing"].includes(b.height_position))
+    throw fail("Pilih posisi pengukuran.");
+  const changes = {
+    date,
+    weight: numeric(b.weight, 0.1, 150),
+    height: numeric(b.height, 10, 220),
+    head: numeric(b.head, 10, 100),
+    height_position: b.height_position,
+  };
+  if (demo) {
+    if (
+      [...records.values()].some(
+        (r) =>
+          r.id !== row.id &&
+          r.child_id === child.id &&
+          r.kind === "measurement" &&
+          r.date === date,
+      )
+    )
+      throw fail("Pengukuran pada tanggal ini sudah ada.", 409);
+    Object.assign(row, changes);
+  } else
+    try {
+      const result = await query(
+        "UPDATE records SET date=?,weight=?,height=?,head=?,height_position=? WHERE id=? AND child_id=? AND kind='measurement'",
+        [...Object.values(changes), row.id, child.id],
+      );
+      if (!result.affectedRows) throw fail("Pengukuran tidak ditemukan.", 404);
+    } catch (error) {
+      if (error.code === "ER_DUP_ENTRY")
+        throw fail("Pengukuran pada tanggal ini sudah ada.", 409);
+      throw error;
+    }
+  res.json({ ...row, ...changes });
+});
+app.delete("/api/children/:id/records/:recordId", async (req, res) => {
+  const { child, row } = await ownedMeasurement(req);
+  if (demo) records.delete(row.id);
+  else
+    await query(
+      "DELETE FROM records WHERE id=? AND child_id=? AND kind='measurement'",
+      [row.id, child.id],
+    );
+  res.json({ ok: true });
+});
 app.post("/api/children/:id/records", async (req, res) => {
   const child = await owned(req.params.id, req.user),
     b = req.body,

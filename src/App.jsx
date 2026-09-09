@@ -20,6 +20,8 @@ import {
   MessagesSquare,
   CalendarDays,
   Plus,
+  Pencil,
+  Trash2,
   LogOut,
   ArrowUpRight,
   X,
@@ -87,6 +89,7 @@ export default function App() {
     [forumTarget, setForumTarget] = useState({ id: "list", version: 0 }),
     [metric, setMetric] = useState("weight"),
     [modal, setModal] = useState(""),
+    [editingMeasurement, setEditingMeasurement] = useState(null),
     [register, setRegister] = useState(false),
     [notice, setNotice] = useState(""),
     [demoAvailable, setDemoAvailable] = useState(false);
@@ -153,11 +156,24 @@ export default function App() {
   }
   async function save(e) {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
       const body = Object.fromEntries(new FormData(e.target));
-      if (modal === "edit-child") {
+      if (modal === "measurement" && editingMeasurement) {
+        const updated = await api(
+          "/children/" +
+            editingMeasurement.child_id +
+            "/records/" +
+            editingMeasurement.id,
+          { method: "PUT", body: JSON.stringify(body) },
+        );
+        setRecords((current) =>
+          current.map((r) => (r.id === updated.id ? updated : r)),
+        );
+        setEditingMeasurement(null);
+      } else if (modal === "edit-child") {
         const updated = await api("/children/" + selected, {
           method: "PUT",
           body: JSON.stringify(body),
@@ -184,9 +200,35 @@ export default function App() {
     }
   }
   const open = (kind) => {
+    setEditingMeasurement(null);
     setError("");
     setModal(kind);
   };
+  async function deleteMeasurement(record) {
+    if (
+      busy ||
+      !window.confirm(
+        "Hapus pengukuran tanggal " +
+          date(record.date) +
+          "? Data ini akan dihapus dari riwayat dan grafik.",
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    try {
+      await api("/children/" + record.child_id + "/records/" + record.id, {
+        method: "DELETE",
+        body: JSON.stringify({}),
+      });
+      setRecords((current) => current.filter((r) => r.id !== record.id));
+      setNotice("Pengukuran berhasil dihapus.");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   if (loading) return <div className="empty">Menyiapkan TumbuhBersama…</div>;
   if (!user)
     return (
@@ -638,6 +680,7 @@ export default function App() {
                               <th>Berat (kg)</th>
                               <th>Panjang / tinggi (cm)</th>
                               <th>Lingkar kepala (cm)</th>
+                              <th>Aksi</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -647,6 +690,37 @@ export default function App() {
                                 <td>{r.weight}</td>
                                 <td>{r.height}</td>
                                 <td>{r.head}</td>
+                                <td>
+                                  <div className="measurement-actions">
+                                    <button
+                                      type="button"
+                                      className="secondary"
+                                      disabled={busy}
+                                      aria-label={
+                                        "Edit pengukuran " + date(r.date)
+                                      }
+                                      onClick={() => {
+                                        open("measurement");
+                                        setEditingMeasurement(r);
+                                      }}
+                                    >
+                                      <Pencil size={15} />
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="secondary measurement-delete"
+                                      disabled={busy}
+                                      aria-label={
+                                        "Hapus pengukuran " + date(r.date)
+                                      }
+                                      onClick={() => deleteMeasurement(r)}
+                                    >
+                                      <Trash2 size={15} />
+                                      Hapus
+                                    </button>
+                                  </div>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -776,7 +850,9 @@ export default function App() {
                   {
                     child: "Tambah profil anak",
                     "edit-child": "Edit profil anak",
-                    measurement: "Catat pengukuran",
+                    measurement: editingMeasurement
+                      ? "Edit pengukuran"
+                      : "Catat pengukuran",
                     journal: "Momen baru si kecil",
                     visit: "Catat kunjungan",
                   }[modal]
@@ -836,7 +912,7 @@ export default function App() {
                     label="Tanggal"
                     name="date"
                     type="date"
-                    defaultValue={today()}
+                    defaultValue={editingMeasurement?.date || today()}
                     min={child.dob}
                     max={modal === "visit" ? undefined : today()}
                   />
@@ -845,6 +921,7 @@ export default function App() {
                       <Field
                         label="Berat badan (kg)"
                         name="weight"
+                        defaultValue={editingMeasurement?.weight ?? ""}
                         type="number"
                         min="0.1"
                         max="150"
@@ -853,6 +930,7 @@ export default function App() {
                       <Field
                         label="Panjang / tinggi badan (cm)"
                         name="height"
+                        defaultValue={editingMeasurement?.height ?? ""}
                         type="number"
                         min="10"
                         max="220"
@@ -860,7 +938,13 @@ export default function App() {
                       />
                       <label className="field">
                         <span>Posisi pengukuran panjang / tinggi</span>
-                        <Select name="height_position" required defaultValue="">
+                        <Select
+                          name="height_position"
+                          required
+                          defaultValue={
+                            editingMeasurement?.height_position || ""
+                          }
+                        >
                           <option value="" disabled>
                             Pilih posisi saat diukur
                           </option>
@@ -875,6 +959,7 @@ export default function App() {
                       <Field
                         label="Lingkar kepala (cm)"
                         name="head"
+                        defaultValue={editingMeasurement?.head ?? ""}
                         type="number"
                         min="10"
                         max="100"

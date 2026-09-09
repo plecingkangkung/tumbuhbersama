@@ -233,6 +233,83 @@ test(
         a.cookie,
         "PUT",
       );
+      const editPath = "/children/" + c.id + "/records/" + measurement.data.id;
+      const edited = {
+        date: "2025-02-03",
+        weight: 5.2,
+        height: 57.4,
+        head: 38.1,
+        height_position: "standing",
+      };
+      assert.equal((await api(editPath, edited, b.cookie, "PUT")).status, 404);
+      assert.equal(
+        (
+          await api(
+            "/children/" + children[1].id + "/records/" + measurement.data.id,
+            edited,
+            a.cookie,
+            "PUT",
+          )
+        ).status,
+        404,
+      );
+      for (const bad of [
+        { date: "2024-12-31" },
+        { date: "2099-01-01" },
+        { date: "2025-02-30" },
+        { weight: 0 },
+        { height: 999 },
+        { head: null },
+        { height_position: "wrong" },
+      ])
+        assert.equal(
+          (await api(editPath, { ...edited, ...bad }, a.cookie, "PUT")).status,
+          400,
+        );
+      assert.equal((await api(editPath, edited, a.cookie, "PUT")).status, 200);
+      assert.equal((await api(editPath, edited, a.cookie, "PUT")).status, 200);
+      const saved = (
+        await api("/children/" + c.id + "/records", undefined, a.cookie)
+      ).data.find((r) => r.id === measurement.data.id);
+      assert.equal(saved.date, edited.date);
+      assert.equal(Number(saved.weight), 5.2);
+      assert.equal(Number(saved.height), 57.4);
+      assert.equal(Number(saved.head), 38.1);
+      const second = await api(
+        "/children/" + c.id + "/records",
+        { kind: "measurement", ...edited, date: "2025-02-04" },
+        a.cookie,
+      );
+      assert.equal(second.status, 201);
+      assert.equal(
+        (
+          await api(
+            editPath,
+            { ...edited, date: "2025-02-04" },
+            a.cookie,
+            "PUT",
+          )
+        ).status,
+        409,
+      );
+      const journalPath = "/children/" + c.id + "/records/" + journal.data.id;
+      assert.equal(
+        (await api(journalPath, edited, a.cookie, "PUT")).status,
+        404,
+      );
+      assert.equal(
+        (await api(journalPath, {}, a.cookie, "DELETE")).status,
+        404,
+      );
+      assert.equal((await api(editPath, {}, b.cookie, "DELETE")).status, 404);
+      assert.equal((await api(editPath, {}, a.cookie, "DELETE")).status, 200);
+      assert.equal((await api(editPath, {}, a.cookie, "DELETE")).status, 404);
+      const remaining = (
+        await api("/children/" + c.id + "/records", undefined, a.cookie)
+      ).data;
+      assert.ok(!remaining.some((r) => r.id === measurement.data.id));
+      assert.ok(remaining.some((r) => r.id === second.data.id));
+      assert.ok(remaining.some((r) => r.id === journal.data.id));
       await db.execute("DELETE FROM children WHERE id=?", [c.id]);
       const [rows] = await db.execute(
         "SELECT * FROM child_milestones WHERE child_id=?",

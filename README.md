@@ -289,3 +289,9 @@ Artikel disajikan melalui API internal `GET /api/articles` (metadata/ringkasan) 
 Tombol **Edit profil** berada di samping Tambah anak. Nama panggilan, tanggal lahir, dan jenis kelamin dapat diperbarui melalui PUT /api/children/:id oleh pemilik akun. Form menampilkan nilai lama; pembatalan tidak menyimpan perubahan. Tidak ada migrasi database tambahan.
 
 Perubahan tanggal lahir menyesuaikan usia, referensi pertumbuhan, dan periode vaksin. Vaksin berstatus planned yang tanggalnya masih sama dengan awal periode acuan mengikuti tanggal lahir baru. Jadwal yang tanggalnya sudah dipindahkan, dibatalkan, atau selesai dipertahankan; pengingat target yang berubah diatur ulang. Tanggal lahir yang melewati catatan pengukuran/jurnal, pengamatan milestone, atau jadwal/pelaksanaan yang dipertahankan ditolak agar riwayat tidak menjadi sebelum kelahiran. Perubahan database dijalankan dalam transaksi.
+
+## Edit dan hapus riwayat pengukuran
+
+Kolom Aksi pada Riwayat pengukuran menyediakan Edit dan Hapus. Form edit menampilkan tanggal, berat, panjang/tinggi, lingkar kepala, dan posisi ukur sebelumnya. Hapus memerlukan konfirmasi dan menghapus permanen catatan tersebut. State pengukuran diperbarui sehingga tabel, ringkasan, dan grafik mengikuti perubahan.
+
+PUT dan DELETE `/api/children/:id/records/:recordId` hanya berlaku untuk pengukuran milik akun pengguna. Validasi tanggal, batas angka, posisi ukur, dan keunikan pengukuran per tanggal diterapkan di server. Endpoint ini tidak mengubah atau menghapus jurnal maupun kunjungan. Tidak memerlukan migrasi tambahan. Tes integrasi mencakup persistensi, konflik tanggal, data tidak valid, isolasi anak/akun, serta penghapusan tanpa memengaruhi catatan lain.
