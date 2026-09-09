@@ -539,3 +539,56 @@ button:not(:disabled):active {
     margin-top: 22px;
   }
 }
+
+/* A single keyboard-accessible button covers the complete article card. */
+.article-card {
+  position: relative;
+}
+.article-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+}
+.article-card-link:disabled::after {
+  cursor: wait;
+}
+.article-card:focus-within {
+  outline: 3px solid #8763ae;
+  outline-offset: 3px;
+}
+.article-card-link:focus-visible {
+  outline: none;
+}
+.article-read-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--plum);
+  font-weight: 600;
+}
+.article-card-meta {
+  flex-wrap: wrap;
+  margin-top: auto;
+  gap: 10px;
+}
+.article-contents {
+  display: grid;
+  gap: 10px;
+  background: var(--lavender);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 22px 0;
+}
+.article-contents strong {
+  color: var(--ink);
+}
+.article-contents a {
+  color: var(--plum);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 0.9rem;
+}
+.article-body > section {
+  scroll-margin-top: 24px;
+}

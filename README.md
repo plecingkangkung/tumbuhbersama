@@ -277,3 +277,9 @@ Pengguna memilih pengingat H-7/H-3/H-1, hari H, atau nonaktif. Server memeriksa 
 Pengingat dalam aplikasi memerlukan server aktif. Ini bukan Web Push, SMS, atau email saat browser ditutup. Tombol **Ekspor kalender** menghasilkan file `.ics` jadwal aktif beserta alarm; impor ke kalender ponsel dan aktifkan notifikasi di aplikasi kalender tersebut. Perubahan berikutnya di website tidak otomatis menyinkronkan file yang sudah diimpor.
 
 Database lama perlu menjalankan `server/migrations/008_child_calendar.sql` (sudah diterapkan pada Laragon lokal); instalasi baru memakai schema lengkap. Mode demo menyimpan kalender sementara tanpa pengiriman notifikasi persisten. Tes `server/calendar.test.js` mencakup batas bulan/tahun kabisat, waktu WIB, ekspor ICS, persistensi, impor kunjungan, validasi, otorisasi, serta deduplikasi dan perubahan jadwal pengingat. Jalankan dengan `TEST_MYSQL=true` untuk pengujian database.
+
+## Pembaruan pengalaman artikel
+
+Seluruh area kartu artikel membuka halaman baca internal melalui tombol yang juga bisa diakses dengan keyboard. Empat artikel editorial memiliki enam bagian, contoh praktis, daftar isi, tanggal pembaruan, durasi baca, serta tautan rujukan. Tulisan ini merupakan konten TumbuhBersama, bukan salinan lengkap publikasi WHO/UNICEF.
+
+Artikel disajikan melalui API internal `GET /api/articles` (metadata/ringkasan) dan `GET /api/articles/:slug` (isi lengkap), dengan sumber konten di `server/articles.js`. Belum ada API berita eksternal, sinkronisasi otomatis, atau CMS; penambahan/pembaruan tulisan masih melalui perubahan konten server. Refresh halaman mengambil ulang data server tetapi tidak menghasilkan artikel baru.

@@ -141,10 +141,22 @@ export default function Articles() {
           <p className="article-lead">{article.excerpt}</p>
           <div className="article-meta">
             <Clock size={15} /> {article.readingMinutes} menit baca{" "}
-            <span>·</span> Rujukan diperiksa 9 September 2026
+            <span>·</span> TumbuhBersama <span>·</span> Diperbarui{" "}
+            {new Date(article.updated + "T00:00:00").toLocaleDateString(
+              "id-ID",
+              { day: "numeric", month: "long", year: "numeric" },
+            )}
           </div>
-          {article.sections.map((section) => (
-            <section key={section.heading}>
+          <nav className="article-contents" aria-label="Daftar isi artikel">
+            <strong>Dalam artikel ini</strong>
+            {article.sections.map((section, index) => (
+              <a key={section.heading} href={"#article-section-" + index}>
+                {section.heading}
+              </a>
+            ))}
+          </nav>
+          {article.sections.map((section, index) => (
+            <section id={"article-section-" + index} key={section.heading}>
               <h2>{section.heading}</h2>
               {section.paragraphs.map((p) => (
                 <p key={p}>{p}</p>
@@ -154,8 +166,8 @@ export default function Articles() {
           <aside className="article-source">
             <h2>Sumber bacaan</h2>
             <p>
-              Ringkasan edukasi TumbuhBersama berdasarkan {article.sourceName};
-              bukan publikasi resmi organisasi tersebut.
+              Artikel edukasi ditulis untuk TumbuhBersama dengan rujukan{" "}
+              {article.sourceName}; bukan publikasi resmi organisasi tersebut.
             </p>
             <a
               href={article.sourceUrl}
@@ -247,6 +259,7 @@ export default function Articles() {
                   <span className="eyebrow">{item.category}</span>
                   <h2>
                     <button
+                      className="article-card-link"
                       id={"article-" + item.slug}
                       disabled={opening}
                       onClick={(e) => read(item, e)}
@@ -259,7 +272,9 @@ export default function Articles() {
                     <span>
                       {item.sourceName} · {item.readingMinutes} menit baca
                     </span>
-                    <ArrowUpRight size={18} />
+                    <span className="article-read-label">
+                      Baca artikel <ArrowUpRight size={18} aria-hidden="true" />
+                    </span>
                   </div>
                 </article>
               );
