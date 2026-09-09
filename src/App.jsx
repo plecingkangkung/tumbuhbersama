@@ -1,3 +1,4 @@
+import Captcha from "./Captcha";
 import BrandMark from "./BrandMark";
 import ResponsiveSidebar from "./ResponsiveSidebar";
 import Notifications from "./Notifications";
@@ -146,6 +147,7 @@ function Chart({ records, metric }) {
   );
 }
 export default function App() {
+  const [captchaVersion, setCaptchaVersion] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   const [user, setUser] = useState(null),
@@ -221,6 +223,7 @@ export default function App() {
       setUser(d.user);
     } catch (e) {
       setError(e.message);
+      setCaptchaVersion((n) => n + 1);
     } finally {
       setBusy(false);
     }
@@ -311,9 +314,13 @@ export default function App() {
                   maxLength="128"
                   autoComplete={register ? "new-password" : "current-password"}
                 />
-                <button className="primary w-full" disabled={busy}>
-                  {busy ? "Memproses…" : register ? "Buat akun" : "Masuk"}
-                </button>
+                <Captcha
+                  key={`${register}-${captchaVersion}`}
+                  disabled={busy}
+                  submitLabel={
+                    busy ? "Memproses…" : register ? "Buat akun" : "Masuk"
+                  }
+                />
               </form>
             )}
             {error && (

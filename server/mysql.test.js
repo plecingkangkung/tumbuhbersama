@@ -1,3 +1,4 @@
+import { captchaBody } from "./captchaTestHelper.js";
 import "dotenv/config";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -22,6 +23,7 @@ test(
       database: process.env.DB_NAME,
     });
     async function req(path, body, cookie) {
+      body = await captchaBody(db, path, body);
       const r = await fetch(base + path, {
         method: body === undefined ? "GET" : "POST",
         headers: {

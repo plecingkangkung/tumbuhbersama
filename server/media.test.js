@@ -1,3 +1,4 @@
+import { captchaBody } from "./captchaTestHelper.js";
 import "dotenv/config";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -25,8 +26,9 @@ test(
       database: process.env.DB_NAME,
     });
     const users = [];
-    const api = async (path, body, cookie, method = body ? "POST" : "GET") =>
-      fetch(base + path, {
+    const api = async (path, body, cookie, method = body ? "POST" : "GET") => {
+      body = await captchaBody(db, path, body);
+      return fetch(base + path, {
         method,
         headers: {
           ...(body instanceof FormData
@@ -41,6 +43,7 @@ test(
               ? JSON.stringify(body)
               : undefined,
       });
+    };
     const photo = await readFile(
       new URL("../public/images/articles/play.jpg", import.meta.url),
     );

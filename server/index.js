@@ -1,3 +1,4 @@
+import { authCaptcha } from "./captcha.js";
 import { createServer } from "node:http";
 import { attachRealtime } from "./realtime.js";
 import { notificationRouter } from "./notifications.js";
@@ -203,8 +204,18 @@ const authLimit = rateLimit({
   legacyHeaders: false,
   message: { error: "Terlalu banyak percobaan. Coba lagi dalam 15 menit." },
 });
+const captcha = authCaptcha(query);
+const verifyCaptcha = (req, res, next) => {
+  if (demo) throw fail("Gunakan tombol demo untuk mencoba.", 403);
+  return captcha.verify(req, res, next);
+};
+app.get("/api/captcha", captcha.limit, (req, res, next) =>
+  demo
+    ? res.status(404).json({ error: "Kode tidak diperlukan pada mode demo." })
+    : captcha.issue(req, res).catch(next),
+);
 app.get("/api/me", (req, res) => res.json({ user: req.user || null, demo }));
-app.post("/api/register", authLimit, async (req, res) => {
+app.post("/api/register", authLimit, verifyCaptcha, async (req, res) => {
   if (demo) throw fail("Gunakan tombol demo untuk mencoba.", 403);
   const name = text(req.body.name, 80),
     email = text(req.body.email, 254).toLowerCase(),
@@ -229,7 +240,7 @@ app.post("/api/register", authLimit, async (req, res) => {
   await login(req, res, user);
   res.status(201).json({ user });
 });
-app.post("/api/login", authLimit, async (req, res) => {
+app.post("/api/login", authLimit, verifyCaptcha, async (req, res) => {
   if (demo) throw fail("Gunakan tombol demo untuk mencoba.", 403);
   const email = text(req.body.email, 254).toLowerCase(),
     password = req.body.password;

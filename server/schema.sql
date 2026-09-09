@@ -86,3 +86,9 @@ CREATE TABLE IF NOT EXISTS forum_media (
  FOREIGN KEY(topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE,
  FOREIGN KEY(comment_id) REFERENCES forum_comments(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS auth_captchas (
+ id CHAR(36) PRIMARY KEY,
+ answer_hash CHAR(64) NOT NULL,
+ expires_at DATETIME NOT NULL,
+ INDEX(expires_at)
+);
