@@ -1,3 +1,4 @@
+import { forumRouter } from "./forum.js";
 import { articles, articleSummaries } from "./articles.js";
 import "dotenv/config";
 import express from "express";
@@ -281,6 +282,7 @@ app.use("/api", (req, res, next) =>
     ? next()
     : res.status(401).json({ error: "Silakan masuk terlebih dahulu." }),
 );
+app.use("/api/forum", forumRouter({ query, demo }));
 app.get("/api/articles", (req, res) => res.json(articleSummaries));
 app.get("/api/articles/:slug", (req, res) => {
   const article = articles.find((item) => item.slug === req.params.slug);

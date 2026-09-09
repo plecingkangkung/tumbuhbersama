@@ -163,3 +163,23 @@ Konten editorial dikelola dalam `server/articles.js`, bukan melalui panel admin 
 - `src/Articles.jsx`: daftar, pencarian, filter, dan tampilan baca.
 
 Tes API mencakup proteksi login, katalog, keunikan slug, detail seluruh artikel, domain rujukan, dan slug yang tidak ditemukan.
+
+## Forum sesama mom
+
+Menu **Forum** tersedia setelah login dan tidak membutuhkan profil anak. Pengguna dapat membuat diskusi dalam lima kategori, mencari isi/judul, membaca topik terbaru, membalas, memuat ulang percakapan, dan menghapus tulisan sendiri dengan konfirmasi. Diskusi bersifat bersama untuk seluruh akun yang login; email, ID pemilik, dan data anak tidak ditampilkan dalam respons forum.
+
+Data disimpan di tabel `forum_topics` dan `forum_comments` MySQL. Instalasi baru dapat memakai `server/schema.sql`. Untuk database lama, jalankan `server/migrations/001_forum.sql` dengan akun database yang memiliki izin CREATE TABLE. Migrasi sudah diterapkan pada Laragon lokal. Mode demo sementara tidak menyediakan forum bersama.
+
+- `GET /api/forum?q=&category=&page=1`: daftar terbaru, 20 topik per halaman.
+- `POST /api/forum`: membuat topik dengan `title`, `category`, `body`.
+- `GET /api/forum/:id`: isi diskusi, penulis, jumlah komentar, dan status kepemilikan.
+- `DELETE /api/forum/:id`: menghapus topik sendiri beserta seluruh komentarnya.
+- `GET /api/forum/:id/comments?page=1`: komentar berurutan, 50 per halaman.
+- `POST /api/forum/:id/comments`: mengirim komentar dengan `body`.
+- `DELETE /api/forum/:id/comments/:commentId`: menghapus komentar sendiri.
+
+Batas: judul 160 karakter, diskusi 5.000, komentar 2.000, pencarian 120; kiriman maksimal 15 operasi tulis per menit per IP. Teks dirender sebagai teks React, bukan HTML mentah. Konten kesehatan anggota adalah pengalaman pribadi, bukan diagnosis atau rekomendasi klinis.
+
+`server/forum.test.js` menguji dua akun, akses tanpa login, validasi, pencarian, privasi respons, komentar, larangan menghapus tulisan orang lain, pagination, dan penghapusan berantai. Aktifkan `TEST_MYSQL=true` untuk menjalankannya. Dengan `TEST_LIVE_FORUM=true`, tes tersebut mengarah ke server lokal port 5173. Semua akun dan konten pengujian dibersihkan sesudah tes.
+
+Versi awal belum memiliki notifikasi real-time, edit tulisan, panel moderator, atau pelaporan konten. Gunakan tombol muat ulang untuk mengambil kiriman terbaru. Siapkan moderasi sebelum forum dibuka luas untuk publik.

@@ -1,3 +1,4 @@
+import Forum from "./Forum";
 import Articles from "./Articles";
 import { useEffect, useState } from "react";
 import {
@@ -6,6 +7,7 @@ import {
   TrendingUp,
   BookHeart,
   BookOpen,
+  MessagesSquare,
   CalendarDays,
   Plus,
   LogOut,
@@ -358,6 +360,7 @@ export default function App() {
             ["Jurnal perkembangan", BookHeart],
             ["Kunjungan", CalendarDays],
             ["Artikel", BookOpen],
+            ["Forum", MessagesSquare],
           ].map(([name, Icon]) => (
             <button
               key={name}
@@ -445,7 +448,9 @@ export default function App() {
               Data fiktif untuk eksplorasi · Catatan demo bersifat sementara.
             </div>
           )}
-          {tab === "Artikel" ? (
+          {tab === "Forum" ? (
+            <Forum />
+          ) : tab === "Artikel" ? (
             <Articles />
           ) : (
             <>
