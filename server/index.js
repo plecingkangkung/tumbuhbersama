@@ -1,3 +1,4 @@
+import { articles, articleSummaries } from "./articles.js";
 import "dotenv/config";
 import express from "express";
 import helmet from "helmet";
@@ -280,6 +281,13 @@ app.use("/api", (req, res, next) =>
     ? next()
     : res.status(401).json({ error: "Silakan masuk terlebih dahulu." }),
 );
+app.get("/api/articles", (req, res) => res.json(articleSummaries));
+app.get("/api/articles/:slug", (req, res) => {
+  const article = articles.find((item) => item.slug === req.params.slug);
+  if (!article)
+    return res.status(404).json({ error: "Artikel tidak ditemukan." });
+  res.json(article);
+});
 app.get("/api/children", async (req, res) =>
   res.json(
     demo
@@ -404,13 +412,11 @@ app.get("/{*path}", (req, res) => res.sendFile(path.join(dist, "index.html")));
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
   if (!err.status) console.error("API error:", err.code || err.message);
-  res
-    .status(err.status || 500)
-    .json({
-      error: err.status
-        ? err.message
-        : "Server belum dapat memproses data. Periksa koneksi database.",
-    });
+  res.status(err.status || 500).json({
+    error: err.status
+      ? err.message
+      : "Server belum dapat memproses data. Periksa koneksi database.",
+  });
 });
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (db) await query("SELECT 1");

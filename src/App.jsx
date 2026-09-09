@@ -1,9 +1,11 @@
+import Articles from "./Articles";
 import { useEffect, useState } from "react";
 import {
   Sprout,
   LayoutDashboard,
   TrendingUp,
   BookHeart,
+  BookOpen,
   CalendarDays,
   Plus,
   LogOut,
@@ -355,6 +357,7 @@ export default function App() {
             ["Pertumbuhan", TrendingUp],
             ["Jurnal perkembangan", BookHeart],
             ["Kunjungan", CalendarDays],
+            ["Artikel", BookOpen],
           ].map(([name, Icon]) => (
             <button
               key={name}
@@ -442,255 +445,267 @@ export default function App() {
               Data fiktif untuk eksplorasi · Catatan demo bersifat sementara.
             </div>
           )}
-          <div className="page-heading">
-            <div>
-              <span className="eyebrow">TUMBUH BERSAMA, SETIAP HARI</span>
-              <h1>
-                {tab === "Ringkasan"
-                  ? `Halo, ${user.name.split(" ")[0]}!`
-                  : tab}
-              </h1>
-              <p className="muted">
-                {tab === "Ringkasan"
-                  ? "Mari lihat cerita terbaru si kecil."
-                  : "Simpan setiap bagian dari perjalanan si kecil."}
-              </p>
-            </div>
-            <button
-              className="primary"
-              onClick={() => open(child ? "measurement" : "child")}
-            >
-              <Plus size={18} />
-              {child ? "Catat pengukuran" : "Tambah anak"}
-            </button>
-          </div>
-          {error && !modal && (
-            <div role="alert" className="error">
-              {error}
-            </div>
-          )}
-          {notice && (
-            <div role="status" className="success">
-              {notice}
-              <button
-                aria-label="Tutup pemberitahuan"
-                onClick={() => setNotice("")}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-          <section className="child-strip">
-            <div className="child-avatar">
-              <Sprout size={35} />
-            </div>
-            <div className="grow">
-              <label className="fine" htmlFor="child-select">
-                PROFIL SI KECIL
-              </label>
-              <select
-                id="child-select"
-                value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-              >
-                {!children.length && (
-                  <option value="">Belum ada profil anak</option>
-                )}
-                {children.map((c) => (
-                  <option value={c.id} key={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              {child && (
-                <p className="muted text-sm">
-                  {age(child.dob)} <span className="mx-2">·</span> Lahir{" "}
-                  {date(child.dob)}
-                </p>
-              )}
-            </div>
-            <button className="secondary" onClick={() => open("child")}>
-              <Plus size={16} /> Tambah anak
-            </button>
-          </section>
-          {!child ? (
-            <section className="card empty">
-              <Sprout size={40} />
-              <h2>Mulai dari profil si kecil</h2>
-              <p>Tambahkan nama dan tanggal lahir untuk mulai mencatat.</p>
-            </section>
+          {tab === "Artikel" ? (
+            <Articles />
           ) : (
             <>
-              {(tab === "Ringkasan" || tab === "Pertumbuhan") && (
-                <>
-                  <div className="stats">
-                    {[
-                      ["Berat badan", "weight", "kg", Weight],
-                      ["Panjang / tinggi badan", "height", "cm", Ruler],
-                      ["Lingkar kepala", "head", "cm", CircleUserRound],
-                    ].map(([label, key, unit, Icon]) => (
-                      <article className="card stat" key={key}>
-                        <div className="flex justify-between items-center">
-                          <span className="muted">{label}</span>
-                          <span className={"stat-icon " + key}>
-                            <Icon size={20} />
-                          </span>
-                        </div>
-                        <strong>
-                          {latest
-                            ? Number(latest[key]).toLocaleString("id-ID")
-                            : "—"}{" "}
-                          <small>{unit}</small>
-                        </strong>
-                        <p className="fine">
-                          {latest
-                            ? "Pengukuran " + date(latest.date)
-                            : "Belum ada pengukuran"}
-                        </p>
-                      </article>
+              <div className="page-heading">
+                <div>
+                  <span className="eyebrow">TUMBUH BERSAMA, SETIAP HARI</span>
+                  <h1>
+                    {tab === "Ringkasan"
+                      ? `Halo, ${user.name.split(" ")[0]}!`
+                      : tab}
+                  </h1>
+                  <p className="muted">
+                    {tab === "Ringkasan"
+                      ? "Mari lihat cerita terbaru si kecil."
+                      : "Simpan setiap bagian dari perjalanan si kecil."}
+                  </p>
+                </div>
+                <button
+                  className="primary"
+                  onClick={() => open(child ? "measurement" : "child")}
+                >
+                  <Plus size={18} />
+                  {child ? "Catat pengukuran" : "Tambah anak"}
+                </button>
+              </div>
+              {error && !modal && (
+                <div role="alert" className="error">
+                  {error}
+                </div>
+              )}
+              {notice && (
+                <div role="status" className="success">
+                  {notice}
+                  <button
+                    aria-label="Tutup pemberitahuan"
+                    onClick={() => setNotice("")}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+              <section className="child-strip">
+                <div className="child-avatar">
+                  <Sprout size={35} />
+                </div>
+                <div className="grow">
+                  <label className="fine" htmlFor="child-select">
+                    PROFIL SI KECIL
+                  </label>
+                  <select
+                    id="child-select"
+                    value={selected}
+                    onChange={(e) => setSelected(e.target.value)}
+                  >
+                    {!children.length && (
+                      <option value="">Belum ada profil anak</option>
+                    )}
+                    {children.map((c) => (
+                      <option value={c.id} key={c.id}>
+                        {c.name}
+                      </option>
                     ))}
-                  </div>
-                  <section className="card growth">
-                    <div className="section-heading">
-                      <div>
-                        <h2>Cerita pertumbuhan</h2>
-                        <p className="muted text-sm">
-                          Perubahan dari pengukuran yang kamu catat.
-                        </p>
-                      </div>
-                      <select
-                        aria-label="Jenis pengukuran grafik"
-                        value={metric}
-                        onChange={(e) => setMetric(e.target.value)}
-                      >
-                        <option value="weight">Berat badan (kg)</option>
-                        <option value="height">Panjang / tinggi (cm)</option>
-                        <option value="head">Lingkar kepala (cm)</option>
-                      </select>
-                    </div>
-                    <Chart records={measurements} metric={metric} />
-                    <p className="fine">
-                      ● Hasil pengukuran pribadi · Bukan kurva standar atau
-                      penilaian medis.
+                  </select>
+                  {child && (
+                    <p className="muted text-sm">
+                      {age(child.dob)} <span className="mx-2">·</span> Lahir{" "}
+                      {date(child.dob)}
                     </p>
-                  </section>
+                  )}
+                </div>
+                <button className="secondary" onClick={() => open("child")}>
+                  <Plus size={16} /> Tambah anak
+                </button>
+              </section>
+              {!child ? (
+                <section className="card empty">
+                  <Sprout size={40} />
+                  <h2>Mulai dari profil si kecil</h2>
+                  <p>Tambahkan nama dan tanggal lahir untuk mulai mencatat.</p>
+                </section>
+              ) : (
+                <>
+                  {(tab === "Ringkasan" || tab === "Pertumbuhan") && (
+                    <>
+                      <div className="stats">
+                        {[
+                          ["Berat badan", "weight", "kg", Weight],
+                          ["Panjang / tinggi badan", "height", "cm", Ruler],
+                          ["Lingkar kepala", "head", "cm", CircleUserRound],
+                        ].map(([label, key, unit, Icon]) => (
+                          <article className="card stat" key={key}>
+                            <div className="flex justify-between items-center">
+                              <span className="muted">{label}</span>
+                              <span className={"stat-icon " + key}>
+                                <Icon size={20} />
+                              </span>
+                            </div>
+                            <strong>
+                              {latest
+                                ? Number(latest[key]).toLocaleString("id-ID")
+                                : "—"}{" "}
+                              <small>{unit}</small>
+                            </strong>
+                            <p className="fine">
+                              {latest
+                                ? "Pengukuran " + date(latest.date)
+                                : "Belum ada pengukuran"}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                      <section className="card growth">
+                        <div className="section-heading">
+                          <div>
+                            <h2>Cerita pertumbuhan</h2>
+                            <p className="muted text-sm">
+                              Perubahan dari pengukuran yang kamu catat.
+                            </p>
+                          </div>
+                          <select
+                            aria-label="Jenis pengukuran grafik"
+                            value={metric}
+                            onChange={(e) => setMetric(e.target.value)}
+                          >
+                            <option value="weight">Berat badan (kg)</option>
+                            <option value="height">
+                              Panjang / tinggi (cm)
+                            </option>
+                            <option value="head">Lingkar kepala (cm)</option>
+                          </select>
+                        </div>
+                        <Chart records={measurements} metric={metric} />
+                        <p className="fine">
+                          ● Hasil pengukuran pribadi · Bukan kurva standar atau
+                          penilaian medis.
+                        </p>
+                      </section>
+                    </>
+                  )}
+                  {tab === "Pertumbuhan" && (
+                    <section className="card">
+                      <h2>Riwayat pengukuran</h2>
+                      <div className="table-wrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Tanggal</th>
+                              <th>Berat (kg)</th>
+                              <th>Panjang / tinggi (cm)</th>
+                              <th>Lingkar kepala (cm)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...measurements].reverse().map((r) => (
+                              <tr key={r.id}>
+                                <td>{date(r.date)}</td>
+                                <td>{r.weight}</td>
+                                <td>{r.height}</td>
+                                <td>{r.head}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {!measurements.length && (
+                        <p className="empty">Belum ada pengukuran.</p>
+                      )}
+                    </section>
+                  )}
+                  <div className={tab === "Ringkasan" ? "bottom-grid" : ""}>
+                    {(tab === "Ringkasan" || tab === "Jurnal perkembangan") && (
+                      <section className="card">
+                        <div className="section-heading">
+                          <div>
+                            <span className="eyebrow">MOMEN BERHARGA</span>
+                            <h2>Jurnal perkembangan</h2>
+                          </div>
+                          <button
+                            className="icon-button"
+                            aria-label="Tambah jurnal"
+                            onClick={() => open("journal")}
+                          >
+                            <Plus size={20} />
+                          </button>
+                        </div>
+                        {!journal.length ? (
+                          <p className="empty">
+                            Kemampuan baru apa yang kamu amati hari ini?
+                          </p>
+                        ) : (
+                          (tab === "Ringkasan"
+                            ? journal.slice(0, 3)
+                            : journal
+                          ).map((r) => (
+                            <article className="journal-item" key={r.id}>
+                              <span className="journal-dot">
+                                <BookHeart size={18} />
+                              </span>
+                              <div>
+                                <span className="fine">
+                                  {date(r.date)} · {r.category}
+                                </span>
+                                <h3>{r.title}</h3>
+                                <p className="muted text-sm">{r.notes}</p>
+                              </div>
+                            </article>
+                          ))
+                        )}
+                      </section>
+                    )}
+                    {(tab === "Ringkasan" || tab === "Kunjungan") && (
+                      <section className="card visits">
+                        <div className="section-heading">
+                          <div>
+                            <span className="eyebrow">AGENDA SI KECIL</span>
+                            <h2>Kunjungan</h2>
+                          </div>
+                          <button
+                            className="icon-button"
+                            aria-label="Tambah kunjungan"
+                            onClick={() => open("visit")}
+                          >
+                            <Plus size={20} />
+                          </button>
+                        </div>
+                        {!visits.length ? (
+                          <p className="empty">
+                            Catat jadwal posyandu atau kunjungan dokter
+                            berikutnya.
+                          </p>
+                        ) : (
+                          (tab === "Ringkasan"
+                            ? visits
+                                .filter((v) => v.date >= today())
+                                .slice(0, 2)
+                            : visits
+                          ).map((r) => (
+                            <article className="visit-item" key={r.id}>
+                              <CalendarDays size={23} />
+                              <div>
+                                <span className="fine">{date(r.date)}</span>
+                                <h3>{r.title}</h3>
+                                <p className="muted text-sm">{r.notes}</p>
+                              </div>
+                            </article>
+                          ))
+                        )}
+                        {tab === "Ringkasan" &&
+                          visits.length > 0 &&
+                          !visits.some((v) => v.date >= today()) && (
+                            <p className="empty">Belum ada jadwal mendatang.</p>
+                          )}
+                        <p className="fine mt-5">
+                          Catatan jadwal pribadi, tanpa pengingat otomatis.
+                        </p>
+                      </section>
+                    )}
+                  </div>
                 </>
               )}
-              {tab === "Pertumbuhan" && (
-                <section className="card">
-                  <h2>Riwayat pengukuran</h2>
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Tanggal</th>
-                          <th>Berat (kg)</th>
-                          <th>Panjang / tinggi (cm)</th>
-                          <th>Lingkar kepala (cm)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...measurements].reverse().map((r) => (
-                          <tr key={r.id}>
-                            <td>{date(r.date)}</td>
-                            <td>{r.weight}</td>
-                            <td>{r.height}</td>
-                            <td>{r.head}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!measurements.length && (
-                    <p className="empty">Belum ada pengukuran.</p>
-                  )}
-                </section>
-              )}
-              <div className={tab === "Ringkasan" ? "bottom-grid" : ""}>
-                {(tab === "Ringkasan" || tab === "Jurnal perkembangan") && (
-                  <section className="card">
-                    <div className="section-heading">
-                      <div>
-                        <span className="eyebrow">MOMEN BERHARGA</span>
-                        <h2>Jurnal perkembangan</h2>
-                      </div>
-                      <button
-                        className="icon-button"
-                        aria-label="Tambah jurnal"
-                        onClick={() => open("journal")}
-                      >
-                        <Plus size={20} />
-                      </button>
-                    </div>
-                    {!journal.length ? (
-                      <p className="empty">
-                        Kemampuan baru apa yang kamu amati hari ini?
-                      </p>
-                    ) : (
-                      (tab === "Ringkasan" ? journal.slice(0, 3) : journal).map(
-                        (r) => (
-                          <article className="journal-item" key={r.id}>
-                            <span className="journal-dot">
-                              <BookHeart size={18} />
-                            </span>
-                            <div>
-                              <span className="fine">
-                                {date(r.date)} · {r.category}
-                              </span>
-                              <h3>{r.title}</h3>
-                              <p className="muted text-sm">{r.notes}</p>
-                            </div>
-                          </article>
-                        ),
-                      )
-                    )}
-                  </section>
-                )}
-                {(tab === "Ringkasan" || tab === "Kunjungan") && (
-                  <section className="card visits">
-                    <div className="section-heading">
-                      <div>
-                        <span className="eyebrow">AGENDA SI KECIL</span>
-                        <h2>Kunjungan</h2>
-                      </div>
-                      <button
-                        className="icon-button"
-                        aria-label="Tambah kunjungan"
-                        onClick={() => open("visit")}
-                      >
-                        <Plus size={20} />
-                      </button>
-                    </div>
-                    {!visits.length ? (
-                      <p className="empty">
-                        Catat jadwal posyandu atau kunjungan dokter berikutnya.
-                      </p>
-                    ) : (
-                      (tab === "Ringkasan"
-                        ? visits.filter((v) => v.date >= today()).slice(0, 2)
-                        : visits
-                      ).map((r) => (
-                        <article className="visit-item" key={r.id}>
-                          <CalendarDays size={23} />
-                          <div>
-                            <span className="fine">{date(r.date)}</span>
-                            <h3>{r.title}</h3>
-                            <p className="muted text-sm">{r.notes}</p>
-                          </div>
-                        </article>
-                      ))
-                    )}
-                    {tab === "Ringkasan" &&
-                      visits.length > 0 &&
-                      !visits.some((v) => v.date >= today()) && (
-                        <p className="empty">Belum ada jadwal mendatang.</p>
-                      )}
-                    <p className="fine mt-5">
-                      Catatan jadwal pribadi, tanpa pengingat otomatis.
-                    </p>
-                  </section>
-                )}
-              </div>
             </>
           )}
           <footer>

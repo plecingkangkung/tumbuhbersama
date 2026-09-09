@@ -28,6 +28,31 @@ test("session isolation, validation and persistence across requests", async () =
       b = await request("/demo", {});
     assert.equal(a.status, 200);
     assert.notEqual(a.cookie, b.cookie);
+    assert.equal((await request("/articles")).status, 401);
+    const catalog = await request("/articles", undefined, a.cookie);
+    assert.equal(catalog.status, 200);
+    assert.equal(catalog.data.length, 4);
+    assert.equal(new Set(catalog.data.map((item) => item.slug)).size, 4);
+    for (const item of catalog.data) {
+      assert.equal(item.sections, undefined);
+      const detail = await request(
+        `/articles/${item.slug}`,
+        undefined,
+        a.cookie,
+      );
+      assert.equal(detail.status, 200);
+      assert.equal(detail.data.title, item.title);
+      assert.ok(detail.data.sections.length > 0);
+      assert.ok(
+        ["www.who.int", "www.unicef.org"].includes(
+          new URL(detail.data.sourceUrl).hostname,
+        ),
+      );
+    }
+    assert.equal(
+      (await request("/articles/tidak-ada", undefined, a.cookie)).status,
+      404,
+    );
     const profiles = await request("/children", undefined, a.cookie);
     assert.equal(profiles.data.length, 1);
     const child = profiles.data[0];

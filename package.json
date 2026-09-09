@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "api": "node --watch server/index.js",
+    "api": "node --watch-path=server --watch-path=.env server/index.js",
     "start": "node server/index.js",
     "dev:all": "concurrently -k \"npm:api\" \"npm:dev\"",
     "test": "node --test server/*.test.js"
