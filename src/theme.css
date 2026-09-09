@@ -697,3 +697,40 @@ button:not(:disabled):active {
     gap: 6px;
   }
 }
+.vaccine-week-block {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  background: #f3e7f9;
+  border: 1px solid #d8bee7;
+  color: #694585;
+  border-radius: 10px;
+  padding: 9px 12px;
+  margin: -1px 0 7px;
+}
+.vaccine-week-block > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.vaccine-week-block strong,
+.vaccine-week-block small {
+  display: block;
+  line-height: 1.5;
+}
+.vaccine-week-block strong {
+  font-size: 0.8rem;
+}
+.vaccine-week-block small {
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.vaccine-week-block:hover {
+  background: #ead9f4;
+}
+.calendar-week-references {
+  margin: 18px 0;
+}
+.calendar-week-references > .fine {
+  margin: 7px 0 12px;
+}

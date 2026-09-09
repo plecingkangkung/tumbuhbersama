@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import Select from "./Select";
 import {
+  isVaccineReference,
+  referencesInWeek,
   addDays,
   addMonths,
   jakartaDate,
@@ -43,6 +45,7 @@ async function api(childId, path = "", options = {}) {
 }
 function EventForm({ event, child, date, busy, onSave, onCancel }) {
   const [status, setStatus] = useState(event?.status || "planned");
+  const [scheduled, setScheduled] = useState(!isVaccineReference(event || {}));
   return (
     <form
       className="calendar-editor"
@@ -51,6 +54,8 @@ function EventForm({ event, child, date, busy, onSave, onCancel }) {
         const body = Object.fromEntries(new FormData(e.currentTarget));
         onSave({
           ...body,
+          due_date: body.due_date || event?.window_start || date,
+          is_scheduled: scheduled,
           kind: event?.kind || body.kind,
           reminder_days:
             body.reminder_days === "off" ? null : Number(body.reminder_days),
@@ -58,6 +63,24 @@ function EventForm({ event, child, date, busy, onSave, onCancel }) {
       }}
     >
       <h3>{event ? "Ubah jadwal" : "Tambah janji / jadwal"}</h3>
+      {event?.vaccine_key && (
+        <label className="field">
+          <span>Rencana vaksin</span>
+          <Select
+            value={scheduled ? "fixed" : "reference"}
+            onChange={(e) => setScheduled(e.target.value === "fixed")}
+          >
+            <option value="reference">Acuan minggu · belum ada janji</option>
+            <option value="fixed">Sudah menentukan tanggal</option>
+          </Select>
+        </label>
+      )}
+      {!scheduled && (
+        <p className="fine">
+          Acuan usia ditampilkan sebagai blok minggu. Pilih tanggal setelah
+          jadwal dengan faskes ditentukan. Pengingat janji belum aktif.
+        </p>
+      )}
       <div className="calendar-form-grid">
         <label className="field">
           <span>Jenis</span>
@@ -82,8 +105,11 @@ function EventForm({ event, child, date, busy, onSave, onCancel }) {
           />
         </label>
         <label className="field">
-          <span>Tanggal</span>
+          <span>
+            {scheduled ? "Tanggal janji" : "Awal periode acuan (bukan janji)"}
+          </span>
           <input
+            disabled={!scheduled}
             name="due_date"
             type="date"
             required
@@ -94,6 +120,7 @@ function EventForm({ event, child, date, busy, onSave, onCancel }) {
         <label className="field">
           <span>Jam (WIB, boleh kosong)</span>
           <input
+            disabled={!scheduled}
             name="due_time"
             type="time"
             defaultValue={event?.due_time?.slice(0, 5) || ""}
@@ -231,14 +258,22 @@ export default function ChildCalendar({
   }, [child.id, retry]);
   const today = jakartaDate(),
     upcoming = events
-      .filter((e) => e.status === "planned" && e.due_date >= today)
+      .filter(
+        (e) =>
+          e.status === "planned" &&
+          !isVaccineReference(e) &&
+          e.due_date >= today,
+      )
       .sort((a, b) =>
         (a.due_date + (a.due_time || "")).localeCompare(
           b.due_date + (b.due_time || ""),
         ),
       );
   const near = upcoming.filter((e) => e.due_date <= addDays(today, 7)),
-    late = events.filter((e) => e.status === "planned" && e.due_date < today);
+    late = events.filter(
+      (e) =>
+        e.status === "planned" && !isVaccineReference(e) && e.due_date < today,
+    );
   function edit(e) {
     setEditor(e);
     setError("");
@@ -319,7 +354,14 @@ export default function ChildCalendar({
   const first = month + "-01",
     offset = (new Date(first + "T00:00:00Z").getUTCDay() + 6) % 7,
     gridStart = addDays(first, -offset);
-  const dayEvents = visible.filter((e) => e.due_date === selected);
+  const dayEvents = visible.filter(
+    (e) => !isVaccineReference(e) && e.due_date === selected,
+  );
+  const selectedWeek = addDays(
+    selected,
+    -((new Date(selected + "T00:00:00Z").getUTCDay() + 6) % 7),
+  );
+  const weekReferences = referencesInWeek(visible, selectedWeek);
   const eventCard = (e) => (
     <article
       key={e.id}
@@ -334,11 +376,12 @@ export default function ChildCalendar({
       </span>
       <div className="calendar-event-content">
         <span className="fine">
-          {dateLabel(e.due_date)}
-          {e.due_time
-            ? " · " + e.due_time.slice(0, 5) + " WIB"
-            : " · Jam belum ditentukan"}{" "}
-          · {e.vaccine_key ? "Acuan vaksin" : "Jadwal pribadi"}
+          {isVaccineReference(e)
+            ? "Acuan minggu · tanggal janji belum ditentukan"
+            : dateLabel(e.due_date) +
+              (e.due_time
+                ? " · " + e.due_time.slice(0, 5) + " WIB"
+                : " · Jam belum ditentukan")}
         </span>
         <h3>{e.title}</h3>
         {e.window_start && (
@@ -358,30 +401,37 @@ export default function ChildCalendar({
             ? `Selesai ${e.completed_date || ""}`
             : e.status === "cancelled"
               ? "Dibatalkan / tidak digunakan"
-              : e.due_date < today
-                ? "Lewat target · belum dicatat"
-                : e.due_date === today
-                  ? "Hari ini"
-                  : "Mendatang"}
+              : isVaccineReference(e)
+                ? "Rencana vaksin · belum dijadwalkan"
+                : e.due_date < today
+                  ? "Lewat target · belum dicatat"
+                  : e.due_date === today
+                    ? "Hari ini"
+                    : "Mendatang"}
         </span>
-        {e.status === "planned" && e.reminder_days != null && (
-          <span className="fine">
-            {" "}
-            · <Bell size={12} />{" "}
-            {e.reminder_days
-              ? `H-${e.reminder_days} + hari jadwal`
-              : "Hari jadwal"}
-          </span>
-        )}
+        {e.status === "planned" &&
+          !isVaccineReference(e) &&
+          e.reminder_days != null && (
+            <span className="fine">
+              {" "}
+              · <Bell size={12} />{" "}
+              {e.reminder_days
+                ? `H-${e.reminder_days} + hari jadwal`
+                : "Hari jadwal"}
+            </span>
+          )}
       </div>
       <div className="calendar-event-actions">
         <button
           className="icon-button"
           aria-label={"Ubah " + e.title}
           disabled={busy}
-          onClick={() => edit(e)}
+          onClick={() =>
+            edit(isVaccineReference(e) ? { ...e, is_scheduled: 1 } : e)
+          }
         >
           <Pencil size={16} />
+          {isVaccineReference(e) && <span>Tentukan tanggal</span>}
         </button>
         {e.status === "planned" && (
           <button
@@ -559,44 +609,97 @@ export default function ChildCalendar({
                 {d}
               </span>
             ))}
-            {Array.from({ length: 42 }, (_, i) => {
-              const day = addDays(gridStart, i),
-                items = visible.filter((e) => e.due_date === day);
+            {Array.from({ length: 6 }, (_, week) => {
+              const start = addDays(gridStart, week * 7),
+                refs = referencesInWeek(visible, start);
               return (
-                <button
-                  key={day}
-                  className={`calendar-day ${day.slice(0, 7) !== month ? "outside" : ""} ${day === selected ? "selected" : ""} ${day === today ? "today" : ""}`}
-                  aria-label={`${dateLabel(day)}, ${items.length} jadwal`}
-                  aria-pressed={day === selected}
-                  onClick={() => {
-                    setSelected(day);
-                    setMonth(day.slice(0, 7));
-                  }}
-                >
-                  <span>{Number(day.slice(-2))}</span>
-                  {items.length > 0 && <small>{items.length} jadwal</small>}
-                  <span className="calendar-dots">
-                    {items.some((e) => e.kind === "vaccine") && (
-                      <i className="vaccine" />
-                    )}
-                    {items.some((e) => e.kind === "doctor") && (
-                      <i className="doctor" />
-                    )}
-                  </span>
-                </button>
+                <Fragment key={start}>
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const day = addDays(start, i),
+                      items = visible.filter(
+                        (e) => !isVaccineReference(e) && e.due_date === day,
+                      );
+                    return (
+                      <button
+                        key={day}
+                        className={`calendar-day ${day.slice(0, 7) !== month ? "outside" : ""} ${day === selected ? "selected" : ""} ${day === today ? "today" : ""}`}
+                        aria-label={
+                          dateLabel(day) + ", " + items.length + " janji"
+                        }
+                        aria-pressed={day === selected}
+                        onClick={() => {
+                          setSelected(day);
+                          setMonth(day.slice(0, 7));
+                        }}
+                      >
+                        <span>{Number(day.slice(-2))}</span>
+                        {items.length > 0 && (
+                          <small>{items.length} janji</small>
+                        )}
+                        <span className="calendar-dots">
+                          {items.some((e) => e.kind === "vaccine") && (
+                            <i className="vaccine" />
+                          )}
+                          {items.some((e) => e.kind === "doctor") && (
+                            <i className="doctor" />
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {refs.length > 0 && (
+                    <button
+                      type="button"
+                      className="vaccine-week-block"
+                      aria-label={
+                        "Lihat acuan vaksin minggu " + dateLabel(start)
+                      }
+                      onClick={() => setSelected(start < first ? first : start)}
+                    >
+                      <Syringe size={16} />
+                      <span>
+                        <strong>
+                          Acuan minggu {dateLabel(start)}–
+                          {dateLabel(addDays(start, 6))}
+                        </strong>
+                        <small>
+                          {refs
+                            .map((e) =>
+                              e.vaccine_key === "hb0"
+                                ? "HB 0 · khusus 24 jam pertama"
+                                : e.title,
+                            )
+                            .join(" · ")}
+                        </small>
+                      </span>
+                    </button>
+                  )}
+                </Fragment>
               );
             })}
           </div>
           <div className="calendar-legend">
-            <span>● Vaksin</span>
+            <span>● Janji vaksin</span>
+            <span>▰ Acuan minggu · bukan janji pasti</span>
             <span>● Janji dokter</span>
           </div>
-          <h3 className="calendar-day-heading">{dateLabel(selected)}</h3>
+          {weekReferences.length > 0 && (
+            <div className="calendar-week-references">
+              <h3>Acuan vaksin minggu ini</h3>
+              <p className="fine">
+                Blok minggu menunjukkan periode perencanaan berdasarkan usia,
+                bukan jaminan rentang aman pemberian. Konfirmasikan tanggal
+                dengan faskes. HB 0 tetap dalam 24 jam pertama setelah lahir.
+              </p>
+              {weekReferences.map(eventCard)}
+            </div>
+          )}
+          <h3 className="calendar-day-heading">Janji {dateLabel(selected)}</h3>
           {dayEvents.length ? (
             dayEvents.map(eventCard)
           ) : (
             <p className="empty">
-              Tidak ada jadwal sesuai filter pada tanggal ini.
+              Belum ada janji bertanggal pasti pada hari ini.
             </p>
           )}
         </>
@@ -638,11 +741,12 @@ export default function ChildCalendar({
         </>
       )}
       <p className="calendar-guidance">
-        Pengingat muncul di lonceng saat server berjalan, pada H-1/H-3/H-7
-        sesuai pilihan dan pada hari jadwal. Jika jam kosong, pengingat awal
-        dihitung pukul 09.00 WIB. Untuk alarm di ponsel saat aplikasi ditutup,
-        impor file .ics ke kalender ponsel dan aktifkan notifikasi di sana;
-        dukungan alarm mengikuti aplikasi kalender.
+        Acuan minggu belum mengaktifkan pengingat janji dan tidak diekspor ke
+        .ics. Setelah tanggal ditentukan, pengingat muncul di lonceng saat
+        server berjalan, pada H-1/H-3/H-7 sesuai pilihan dan pada hari jadwal.
+        Jika jam kosong, pengingat awal dihitung pukul 09.00 WIB. Untuk alarm di
+        ponsel saat aplikasi ditutup, impor file .ics ke kalender ponsel dan
+        aktifkan notifikasi di sana; dukungan alarm mengikuti aplikasi kalender.
       </p>
     </section>
   );

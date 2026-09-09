@@ -62,7 +62,12 @@ export function jakartaDate(now = new Date()) {
   return now.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 }
 export function reminderPhase(event, now = new Date()) {
-  if (event.status !== "planned" || event.reminder_days == null) return null;
+  if (
+    isVaccineReference(event) ||
+    event.status !== "planned" ||
+    event.reminder_days == null
+  )
+    return null;
   const today = jakartaDate(now);
   if (event.due_date === today) return "today";
   const at = Date.parse(
@@ -87,7 +92,9 @@ export function calendarICS(events, child) {
     "PRODID:-//TumbuhBersama//Kalender Anak//ID",
     "CALSCALE:GREGORIAN",
   ];
-  for (const e of events.filter((e) => e.status === "planned")) {
+  for (const e of events.filter(
+    (e) => e.status === "planned" && !isVaccineReference(e),
+  )) {
     lines.push(
       "BEGIN:VEVENT",
       `UID:${e.id}@tumbuhbersama`,
@@ -150,5 +157,17 @@ export function calendarICS(events, child) {
         return parts.join("\r\n");
       })
       .join("\r\n") + "\r\n"
+  );
+}
+
+export const isVaccineReference = (event) =>
+  Boolean(event.vaccine_key) &&
+  !Number(event.is_scheduled) &&
+  event.status === "planned";
+export function referencesInWeek(events, start) {
+  const end = addDays(start, 6);
+  return events.filter(
+    (e) =>
+      isVaccineReference(e) && e.window_start <= end && e.window_end >= start,
   );
 }

@@ -295,3 +295,11 @@ Perubahan tanggal lahir menyesuaikan usia, referensi pertumbuhan, dan periode va
 Kolom Aksi pada Riwayat pengukuran menyediakan Edit dan Hapus. Form edit menampilkan tanggal, berat, panjang/tinggi, lingkar kepala, dan posisi ukur sebelumnya. Hapus memerlukan konfirmasi dan menghapus permanen catatan tersebut. State pengukuran diperbarui sehingga tabel, ringkasan, dan grafik mengikuti perubahan.
 
 PUT dan DELETE `/api/children/:id/records/:recordId` hanya berlaku untuk pengukuran milik akun pengguna. Validasi tanggal, batas angka, posisi ukur, dan keunikan pengukuran per tanggal diterapkan di server. Endpoint ini tidak mengubah atau menghapus jurnal maupun kunjungan. Tidak memerlukan migrasi tambahan. Tes integrasi mencakup persistensi, konflik tanggal, data tidak valid, isolasi anak/akun, serta penghapusan tanpa memengaruhi catatan lain.
+
+## Acuan vaksin dalam blok minggu
+
+Acuan vaksin otomatis kini tampil sebagai pita mingguan di kalender, bukan janji pada satu tanggal. Klik pita untuk melihat vaksin pada minggu tersebut, lalu pilih **Tentukan tanggal** jika jadwal dengan faskes sudah disepakati. Form juga dapat mengembalikan jadwal menjadi acuan mingguan. Blok minggu mengelompokkan periode usia yang sudah ada, bukan memperluas batas aman pemberian; HB 0 tetap diberi keterangan 24 jam pertama.
+
+Kolom `is_scheduled` membedakan acuan dari janji pasti, termasuk bila tanggal janji kebetulan sama dengan awal periode acuan. Acuan tidak masuk hitungan janji harian, jadwal terlambat, pengingat H-n/hari H, atau ekspor ICS. Janji pasti dan catatan selesai tetap tersimpan. Perubahan tanggal lahir hanya menggeser acuan otomatis yang belum dijadwalkan.
+
+Database lama perlu migrasi `server/migrations/009_vaccine_reference_weeks.sql` sekali (sudah diterapkan pada Laragon lokal). Migrasi mempertahankan jadwal yang tanggalnya sudah diubah, memiliki jam/dokter/lokasi, atau selesai; jadwal lama yang tidak dapat dibedakan dari acuan bisa dikonfirmasi kembali lewat Tentukan tanggal. Pengingat lama untuk acuan yang belum dijadwalkan dibersihkan.

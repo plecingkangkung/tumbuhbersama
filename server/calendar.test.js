@@ -13,6 +13,8 @@ import {
   reminderPhase,
   jakartaDate,
   calendarICS,
+  isVaccineReference,
+  referencesInWeek,
 } from "../shared/calendar.js";
 
 test("vaccine calendar month boundaries, optional doses and week conversion", () => {
@@ -181,7 +183,7 @@ test(
         (
           await api(
             p + "/" + manual.id,
-            { ...manual, due_date: "2021-05-01" },
+            { ...manual, is_scheduled: 1, due_date: "2021-05-01" },
             a.cookie,
             "PUT",
           )
@@ -329,3 +331,26 @@ test(
     }
   },
 );
+
+test("reference weeks overlap month boundaries without becoming dated appointments", () => {
+  const ref = {
+    id: "reference",
+    vaccine_key: "bcg",
+    is_scheduled: 0,
+    status: "planned",
+    window_start: "2026-01-31",
+    window_end: "2026-02-27",
+    due_date: "2026-01-31",
+    reminder_days: 7,
+  };
+  assert.ok(isVaccineReference(ref));
+  assert.equal(referencesInWeek([ref], "2026-01-26").length, 1);
+  assert.equal(referencesInWeek([ref], "2026-02-23").length, 1);
+  assert.equal(referencesInWeek([ref], "2026-03-02").length, 0);
+  assert.equal(reminderPhase(ref, new Date("2026-01-31T05:00:00Z")), null);
+  assert.ok(!calendarICS([ref], { name: "Anak" }).includes("BEGIN:VEVENT"));
+  const fixed = { ...ref, is_scheduled: 1 };
+  assert.equal(referencesInWeek([fixed], "2026-01-26").length, 0);
+  assert.equal(reminderPhase(fixed, new Date("2026-01-31T05:00:00Z")), "today");
+  assert.ok(calendarICS([fixed], { name: "Anak" }).includes("BEGIN:VEVENT"));
+});

@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS calendar_events (
  id CHAR(36) PRIMARY KEY,
  child_id CHAR(36) NOT NULL,
  vaccine_key VARCHAR(40) NULL,
+ is_scheduled TINYINT(1) NOT NULL DEFAULT 0,
  source_record_id CHAR(36) NULL,
  kind ENUM('vaccine','doctor') NOT NULL,
  title VARCHAR(160) NOT NULL,

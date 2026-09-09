@@ -33,6 +33,7 @@ export function childCalendar({
       id: randomUUID(),
       child_id: child.id,
       vaccine_key: v.key,
+      is_scheduled: 0,
       source_record_id: null,
       kind: "vaccine",
       title: v.title,
@@ -54,6 +55,7 @@ export function childCalendar({
       "id",
       "child_id",
       "vaccine_key",
+      "is_scheduled",
       "source_record_id",
       "kind",
       "title",
@@ -79,6 +81,7 @@ export function childCalendar({
       child_id: r.child_id,
       source_record_id: r.id,
       kind: "doctor",
+      is_scheduled: 1,
       title: r.title,
       due_date: r.date,
       due_time: null,
@@ -220,7 +223,7 @@ export function childCalendar({
         if (!phase) continue;
         // Recheck current row in INSERT to avoid emitting after concurrent completion/reschedule.
         const result = await query(
-          "INSERT IGNORE INTO calendar_reminders(id,event_id,phase) SELECT ?,id,? FROM calendar_events WHERE id=? AND status='planned' AND due_date=? AND reminder_days=? AND due_time <=> ?",
+          "INSERT IGNORE INTO calendar_reminders(id,event_id,phase) SELECT ?,id,? FROM calendar_events WHERE id=? AND status='planned' AND due_date=? AND reminder_days=? AND due_time <=> ? AND (vaccine_key IS NULL OR is_scheduled=1)",
           [randomUUID(), phase, e.id, e.due_date, e.reminder_days, e.due_time],
         );
         if (result.affectedRows) changed.add(e.user_id);
@@ -290,6 +293,7 @@ export function childCalendar({
         id: randomUUID(),
         child_id: child.id,
         kind: req.body.kind,
+        is_scheduled: 1,
         ...validate(req.body, child),
       };
     }
@@ -322,6 +326,22 @@ export function childCalendar({
     const old = await getEvent(req),
       child = await owned(req.params.id, req.user),
       changes = validate(req.body, child);
+    if (
+      req.body.is_scheduled != null &&
+      ![true, false, 0, 1].includes(req.body.is_scheduled)
+    )
+      throw fail("Pilihan rencana tidak valid.");
+    changes.is_scheduled = old.vaccine_key
+      ? Number(req.body.is_scheduled ?? 1)
+      : 1;
+    if (
+      old.vaccine_key &&
+      !changes.is_scheduled &&
+      changes.status === "planned"
+    ) {
+      changes.due_date = old.window_start;
+      changes.due_time = null;
+    }
     const e = { ...old, ...changes };
     if (demo) {
       Object.assign(old, changes);
@@ -334,7 +354,7 @@ export function childCalendar({
         );
         if (
           changes.status !== "planned" ||
-          ["due_date", "due_time", "reminder_days"].some(
+          ["due_date", "due_time", "reminder_days", "is_scheduled"].some(
             (key) => changes[key] !== old[key],
           )
         )
@@ -367,8 +387,7 @@ export function childCalendar({
     const changes = items.map((e) => {
       const v = vaccineSchedule.find((v) => v.key === e.vaccine_key);
       const dates = v ? vaccineDates(child.dob, v) : {};
-      const automatic =
-        v && e.status === "planned" && e.due_date === e.window_start;
+      const automatic = v && e.status === "planned" && !Number(e.is_scheduled);
       const due = automatic ? dates.due_date : e.due_date;
       if (
         (e.completed_date && e.completed_date < child.dob) ||
