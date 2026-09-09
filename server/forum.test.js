@@ -92,6 +92,48 @@ test(
       assert.equal(created.status, 201);
       assert.equal(created.data.is_owner, 1);
       const topicId = created.data.id;
+      const likesPath = "/forum/" + topicId + "/like";
+      assert.equal((await req(likesPath, "PUT", { liked: true })).status, 401);
+      assert.equal(
+        (await req(likesPath, "PUT", { liked: "yes" }, a.cookie)).status,
+        400,
+      );
+      assert.equal(created.data.like_count, 0);
+      const first = await req(likesPath, "PUT", { liked: true }, a.cookie);
+      assert.equal(first.status, 200);
+      assert.equal(first.data.liked, true);
+      assert.equal(first.data.like_count, 1);
+      const duplicates = await Promise.all([
+        req(likesPath, "PUT", { liked: true }, a.cookie),
+        req(likesPath, "PUT", { liked: true }, a.cookie),
+      ]);
+      for (const r of duplicates) assert.equal(r.data.like_count, 1);
+      const second = await req(likesPath, "PUT", { liked: true }, b.cookie);
+      assert.equal(second.data.like_count, 2);
+      const unlike = await req(likesPath, "PUT", { liked: false }, a.cookie);
+      assert.equal(unlike.data.like_count, 1);
+      assert.equal(unlike.data.liked, false);
+      assert.equal(
+        (await req(likesPath, "PUT", { liked: false }, a.cookie)).data
+          .like_count,
+        1,
+      );
+      const persisted = await req(
+        "/forum/" + topicId,
+        "GET",
+        undefined,
+        b.cookie,
+      );
+      assert.equal(persisted.data.liked, 1);
+      assert.equal(persisted.data.like_count, 1);
+      const listing = await req(
+        "/forum?q=" + unique,
+        "GET",
+        undefined,
+        a.cookie,
+      );
+      assert.equal(listing.data.items[0].liked, 0);
+      assert.equal(listing.data.items[0].like_count, 1);
       const read = await req("/forum/" + topicId, "GET", undefined, b.cookie);
       assert.equal(read.status, 200);
       assert.equal(read.data.is_owner, 0);
@@ -199,6 +241,15 @@ test(
         [topicId],
       );
       assert.equal(remaining[0].n, 0);
+      const [remainingLikes] = await db.execute(
+        "SELECT COUNT(*) AS n FROM forum_likes WHERE topic_id=?",
+        [topicId],
+      );
+      assert.equal(remainingLikes[0].n, 0);
+      assert.equal(
+        (await req(likesPath, "PUT", { liked: true }, b.cookie)).status,
+        404,
+      );
     } finally {
       for (const id of users)
         await db.execute("DELETE FROM users WHERE id=?", [id]);

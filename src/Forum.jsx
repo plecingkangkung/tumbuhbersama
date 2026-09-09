@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   MessagesSquare,
+  Heart,
   MessageCircle,
   Plus,
   Search,
@@ -73,6 +74,50 @@ function Pager({ page, total, pageSize, onChange, disabled = false }) {
       </button>
     </div>
   ) : null;
+}
+function LikeButton({ topic, onChange }) {
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  const pending = useRef(false);
+  return (
+    <div className="forum-like-control">
+      <button
+        type="button"
+        className={`forum-like ${topic.liked ? "is-liked" : ""}`}
+        aria-pressed={Boolean(topic.liked)}
+        aria-label={`${topic.liked ? "Batal suka" : "Sukai diskusi"}: ${topic.title}`}
+        disabled={busy}
+        onClick={async (event) => {
+          event.stopPropagation();
+          if (pending.current) return;
+          pending.current = true;
+          setBusy(true);
+          setError("");
+          try {
+            const result = await request("/" + topic.id + "/like", {
+              method: "PUT",
+              body: JSON.stringify({ liked: !topic.liked }),
+            });
+            onChange(result);
+          } catch (e) {
+            setError(e.message);
+          } finally {
+            pending.current = false;
+            setBusy(false);
+          }
+        }}
+      >
+        <Heart size={18} fill={topic.liked ? "currentColor" : "none"} />
+        <span>{topic.like_count ?? 0}</span>
+        <span>{topic.liked ? "Disukai" : "Suka"}</span>
+      </button>
+      {error && (
+        <p className="forum-like-error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 function TopicList({ open, refresh }) {
   const [data, setData] = useState(null),
@@ -184,11 +229,24 @@ function TopicList({ open, refresh }) {
                     <p className="muted forum-excerpt">{t.excerpt}</p>
                     <Author name={t.author_name} date={t.created_at} />
                   </div>
-                  <span className="forum-replies">
-                    <MessageCircle size={20} />
-                    {t.comment_count}
-                    <span>balasan</span>
-                  </span>
+                  <div className="forum-card-actions">
+                    <LikeButton
+                      topic={t}
+                      onChange={(result) =>
+                        setData((current) => ({
+                          ...current,
+                          items: current.items.map((item) =>
+                            item.id === t.id ? { ...item, ...result } : item,
+                          ),
+                        }))
+                      }
+                    />
+                    <span className="forum-replies">
+                      <MessageCircle size={20} />
+                      {t.comment_count}
+                      <span>balasan</span>
+                    </span>
+                  </div>
                 </article>
               ))}
             </div>
@@ -423,6 +481,14 @@ function Discussion({ id, onBack }) {
               </h1>
               <Author name={topic.author_name} date={topic.created_at} />
               <p className="forum-body">{topic.body}</p>
+              <div className="forum-detail-like">
+                <LikeButton
+                  topic={topic}
+                  onChange={(result) =>
+                    setTopic((current) => ({ ...current, ...result }))
+                  }
+                />
+              </div>
             </article>
             <section className="card forum-comments">
               <div className="section-heading">

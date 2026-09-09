@@ -183,3 +183,11 @@ Batas: judul 160 karakter, diskusi 5.000, komentar 2.000, pencarian 120; kiriman
 `server/forum.test.js` menguji dua akun, akses tanpa login, validasi, pencarian, privasi respons, komentar, larangan menghapus tulisan orang lain, pagination, dan penghapusan berantai. Aktifkan `TEST_MYSQL=true` untuk menjalankannya. Dengan `TEST_LIVE_FORUM=true`, tes tersebut mengarah ke server lokal port 5173. Semua akun dan konten pengujian dibersihkan sesudah tes.
 
 Versi awal belum memiliki notifikasi real-time, edit tulisan, panel moderator, atau pelaporan konten. Gunakan tombol muat ulang untuk mengambil kiriman terbaru. Siapkan moderasi sebelum forum dibuka luas untuk publik.
+
+### Like diskusi
+
+Tombol Suka tersedia pada kartu dan detail diskusi, menampilkan jumlah like serta status akun saat ini. Klik kembali untuk membatalkan. Tombol like memiliki area interaksi sendiri sehingga tidak membuka detail kartu.
+
+Penyimpanan memakai tabel `forum_likes` dengan primary key gabungan `(topic_id,user_id)`: satu akun hanya memiliki satu like per diskusi, termasuk saat request diulang atau datang bersamaan. `PUT /api/forum/:id/like` menerima `{ "liked": true }` atau `{ "liked": false }`; hasil berisi `liked` dan `like_count`. User selalu diambil dari sesi server. Respons katalog/detail juga menyertakan kedua nilai tersebut, tanpa daftar identitas penyuka. Pembatasan like: 60 request per menit per IP.
+
+Untuk database lama, jalankan `server/migrations/002_forum_likes.sql` setelah migrasi forum pertama. Migrasi ini sudah diterapkan pada Laragon lokal. Schema instalasi baru juga sudah diperbarui. Like ikut dihapus ketika topik atau akun pemilik like dihapus. Pengujian mencakup akses tanpa login, validasi boolean, dua akun, duplikasi paralel, batal suka berulang, persistensi, serta penghapusan berantai.

@@ -26,12 +26,10 @@ export function forumRouter({ query, demo }) {
   const router = Router();
   router.use((req, res, next) =>
     demo
-      ? res
-          .status(503)
-          .json({
-            error:
-              "Forum bersama tersedia pada mode akun MySQL. Keluar dari demo dan gunakan akun biasa.",
-          })
+      ? res.status(503).json({
+          error:
+            "Forum bersama tersedia pada mode akun MySQL. Keluar dari demo dan gunakan akun biasa.",
+        })
       : next(),
   );
   const writeLimit = rateLimit({
@@ -43,9 +41,11 @@ export function forumRouter({ query, demo }) {
       error: "Terlalu banyak kiriman. Tunggu satu menit sebelum mencoba lagi.",
     },
   });
-  const selectTopic = `SELECT t.id,t.title,t.category,t.body,t.created_at,u.name AS author_name,(t.user_id=?) AS is_owner,(SELECT COUNT(*) FROM forum_comments c WHERE c.topic_id=t.id) AS comment_count FROM forum_topics t JOIN users u ON u.id=t.user_id`;
+  const selectTopic = `SELECT t.id,t.title,t.category,t.body,t.created_at,u.name AS author_name,(t.user_id=?) AS is_owner,(SELECT COUNT(*) FROM forum_comments c WHERE c.topic_id=t.id) AS comment_count,(SELECT COUNT(*) FROM forum_likes l WHERE l.topic_id=t.id) AS like_count,EXISTS(SELECT 1 FROM forum_likes l WHERE l.topic_id=t.id AND l.user_id=?) AS liked FROM forum_topics t JOIN users u ON u.id=t.user_id`;
   const topic = async (id, user) => {
-    const row = (await query(selectTopic + " WHERE t.id=?", [user.id, id]))[0];
+    const row = (
+      await query(selectTopic + " WHERE t.id=?", [user.id, user.id, id])
+    )[0];
     if (!row) throw fail("Diskusi tidak ditemukan atau sudah dihapus.", 404);
     return row;
   };
@@ -77,7 +77,7 @@ export function forumRouter({ query, demo }) {
       selectTopic +
         clause +
         ` ORDER BY t.created_at DESC,t.id DESC LIMIT 20 OFFSET ${(page - 1) * 20}`,
-      [req.user.id, ...params],
+      [req.user.id, req.user.id, ...params],
     );
     res.json({
       items: items.map(({ body, ...item }) => ({
@@ -115,6 +115,36 @@ export function forumRouter({ query, demo }) {
       req.user.id,
     ]);
     res.json({ ok: true });
+  });
+  const likeLimit = rateLimit({
+    windowMs: 60000,
+    limit: 60,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: { error: "Terlalu banyak perubahan like. Tunggu sebentar." },
+  });
+  router.put("/:id/like", likeLimit, async (req, res) => {
+    if (typeof req.body.liked !== "boolean")
+      throw fail("Status like harus true atau false.");
+    await topic(req.params.id, req.user);
+    if (req.body.liked) {
+      try {
+        await query(
+          "INSERT INTO forum_likes(topic_id,user_id) VALUES(?,?) ON DUPLICATE KEY UPDATE user_id=forum_likes.user_id",
+          [req.params.id, req.user.id],
+        );
+      } catch (e) {
+        if (e.code === "ER_NO_REFERENCED_ROW_2")
+          throw fail("Diskusi sudah dihapus.", 404);
+        throw e;
+      }
+    } else
+      await query("DELETE FROM forum_likes WHERE topic_id=? AND user_id=?", [
+        req.params.id,
+        req.user.id,
+      ]);
+    const row = await topic(req.params.id, req.user);
+    res.json({ liked: Boolean(row.liked), like_count: row.like_count });
   });
   router.get("/:id/comments", async (req, res) => {
     await topic(req.params.id, req.user);

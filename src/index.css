@@ -1265,3 +1265,69 @@ th {
 .forum-topic-link:focus-visible {
   outline: none;
 }
+.forum-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+  max-width: 180px;
+}
+.forum-like-control {
+  position: relative;
+  z-index: 1;
+  cursor: default;
+}
+.forum-like {
+  border: 1px solid #dbe7e1;
+  border-radius: 22px;
+  padding: 9px 12px;
+  color: #62777d;
+  background: white;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  min-height: 40px;
+}
+.forum-like:hover {
+  background: #fff1f3;
+  border-color: #edbdc6;
+  color: #b54f68;
+}
+.forum-like.is-liked {
+  background: #fff1f3;
+  border-color: #efc4ce;
+  color: #ad3e5a;
+}
+.forum-like-error {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: #a03e39;
+  max-width: 260px;
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+.forum-detail-like {
+  margin-top: 22px;
+  border-top: 1px solid #e7edef;
+  padding-top: 18px;
+}
+.forum-detail-like .forum-like-control {
+  display: inline-block;
+}
+@media (max-width: 760px) {
+  .forum-topic {
+    flex-wrap: wrap;
+  }
+  .forum-topic-main {
+    flex-basis: 100%;
+  }
+  .forum-card-actions {
+    flex-direction: row;
+    max-width: none;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .forum-card-actions .forum-replies {
+    flex-direction: row;
+    gap: 6px;
+  }
+}
