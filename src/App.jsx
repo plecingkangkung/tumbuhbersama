@@ -293,18 +293,43 @@ export default function App() {
         <span className="eyebrow nav-label">RUANG KELUARGA</span>
         <nav aria-label="Navigasi utama">
           {[
-            ["Ringkasan", LayoutDashboard],
-            ["Pertumbuhan", TrendingUp],
-            ["Jurnal perkembangan", BookHeart],
-            ["Milestone", ListChecks],
-            ["Kalender", CalendarDays],
-            ["Artikel", BookOpen],
-            ["Forum", MessagesSquare],
-          ].map(([name, Icon]) => (
+            [
+              "Ringkasan",
+              LayoutDashboard,
+              "Lihat ringkasan dan kabar terbaru si kecil.",
+            ],
+            [
+              "Pertumbuhan",
+              TrendingUp,
+              "Pantau berat, tinggi, dan lingkar kepala.",
+            ],
+            [
+              "Jurnal perkembangan",
+              BookHeart,
+              "Simpan cerita dan momen harian anak.",
+            ],
+            [
+              "Milestone",
+              ListChecks,
+              "Catat kemampuan yang mulai dikuasai anak.",
+            ],
+            [
+              "Kalender",
+              CalendarDays,
+              "Atur vaksinasi, janji dokter, dan pengingat.",
+            ],
+            ["Artikel", BookOpen, "Baca panduan tumbuh kembang dan kesehatan."],
+            [
+              "Forum",
+              MessagesSquare,
+              "Berbagi cerita dan berdiskusi dengan orang tua.",
+            ],
+          ].map(([name, Icon, hint]) => (
             <button
               key={name}
               className={tab === name ? "active" : ""}
               aria-current={tab === name ? "page" : undefined}
+              title={hint}
               onClick={() => {
                 setTab(name);
                 if (name === "Kalender")
@@ -319,13 +344,17 @@ export default function App() {
                   }));
               }}
             >
-              <Icon size={20} />
-              {name}
+              <Icon size={20} aria-hidden="true" />
+              <span className="nav-copy">
+                <span>{name}</span>
+                <small>{hint}</small>
+              </span>
             </button>
           ))}
         </nav>
         <button
           className="logout"
+          title="Keluar dari akun di perangkat ini"
           onClick={async () => {
             try {
               await post("/logout", {});

@@ -540,18 +540,9 @@ button:not(:disabled):active {
   }
 }
 
-/* A single keyboard-accessible button covers the complete article card. */
+/* Pointer clicks use the card; the title button preserves keyboard access. */
 .article-card {
   position: relative;
-}
-.article-card-link::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  cursor: pointer;
-}
-.article-card-link:disabled::after {
-  cursor: wait;
 }
 .article-card:focus-within {
   outline: 3px solid #8763ae;
@@ -591,4 +582,29 @@ button:not(:disabled):active {
 }
 .article-body > section {
   scroll-margin-top: 24px;
+}
+
+.article-card {
+  cursor: pointer;
+}
+.article-card[aria-busy="true"] {
+  cursor: wait;
+}
+.sidebar nav button {
+  align-items: flex-start;
+}
+.nav-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.nav-copy > small {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #75657d;
+  font-weight: 400;
+}
+.sidebar nav button.active .nav-copy > small {
+  color: #6c5280;
 }

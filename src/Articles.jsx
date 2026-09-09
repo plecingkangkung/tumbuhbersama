@@ -83,8 +83,9 @@ export default function Articles() {
   useEffect(() => {
     if (article) heading.current?.focus();
   }, [article]);
-  async function read(item, event) {
-    lastButton.current = event.currentTarget;
+  async function read(item) {
+    if (opening) return;
+    lastButton.current = "article-" + item.slug;
     controller.current?.abort();
     const abort = new AbortController();
     controller.current = abort;
@@ -119,7 +120,7 @@ export default function Articles() {
           onClick={() => {
             setArticle(null);
             requestAnimationFrame(() => {
-              document.getElementById(lastButton.current?.id)?.focus();
+              document.getElementById(lastButton.current)?.focus();
             });
           }}
         >
@@ -251,7 +252,14 @@ export default function Articles() {
           <div className="article-grid">
             {filtered.map((item) => {
               return (
-                <article className="card article-card" key={item.slug}>
+                <article
+                  className="card article-card"
+                  key={item.slug}
+                  aria-busy={opening}
+                  onClick={(event) => {
+                    if (!event.target.closest("button")) read(item);
+                  }}
+                >
                   <div className="article-cover article-cover-photo">
                     <ArticleImage topic={item.icon} />
                     <span>{item.age}</span>
@@ -262,7 +270,7 @@ export default function Articles() {
                       className="article-card-link"
                       id={"article-" + item.slug}
                       disabled={opening}
-                      onClick={(e) => read(item, e)}
+                      onClick={() => read(item)}
                     >
                       {item.title}
                     </button>
