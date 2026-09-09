@@ -70,7 +70,15 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
     curve.values.filter((p) => p.day >= ds[0] && p.day <= ds.at(-1));
   const birth = all.find((p) => p.day === 0);
   return (
-    <div className="who-growth">
+    <div
+      className="who-growth"
+      id="growth-chart-panel"
+      role="region"
+      aria-label={"Grafik WHO: " + info.label}
+    >
+      <h3 className="growth-metric-heading" aria-live="polite">
+        {info.label} menurut usia <span>· {info.unit}</span>
+      </h3>
       <div className="growth-summary">
         {[
           ["Saat lahir", birth?.raw],

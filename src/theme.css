@@ -642,3 +642,58 @@ button:not(:disabled):active {
 .measurement-actions .measurement-delete:hover {
   background: #fce7f2;
 }
+.growth-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.growth-metrics button {
+  border: 1px solid #e4d6ed;
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: #fffafd;
+  color: #735581;
+  justify-content: flex-start;
+  text-align: left;
+  font-size: 0.875rem;
+}
+.growth-metrics button > svg {
+  flex-shrink: 0;
+}
+.growth-metrics button small {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #78677f;
+}
+.growth-metrics button[aria-pressed="true"] {
+  background: #eee3f7;
+  border-color: #9870b5;
+  box-shadow: inset 0 0 0 1px #9870b5;
+  color: #583574;
+  font-weight: 650;
+}
+.growth-metrics button:hover {
+  background: #f7edf9;
+}
+.growth-metric-heading {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+}
+.growth-metric-heading span {
+  color: #78677f;
+  font-weight: 400;
+}
+@media (max-width: 520px) {
+  .growth-metrics {
+    gap: 6px;
+  }
+  .growth-metrics button {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 8px;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+}

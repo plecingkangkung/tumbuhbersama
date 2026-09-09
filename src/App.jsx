@@ -606,17 +606,35 @@ export default function App() {
                               Pantau pengukuran si kecil bersama persentil WHO.
                             </p>
                           </div>
-                          <Select
-                            aria-label="Jenis pengukuran grafik"
-                            value={metric}
-                            onChange={(e) => setMetric(e.target.value)}
-                          >
-                            <option value="weight">Berat badan (kg)</option>
-                            <option value="height">
-                              Panjang / tinggi (cm)
-                            </option>
-                            <option value="head">Lingkar kepala (cm)</option>
-                          </Select>
+                        </div>
+                        <div
+                          className="growth-metrics"
+                          role="group"
+                          aria-label="Pilih jenis pengukuran grafik"
+                        >
+                          {[
+                            ["weight", "Berat badan", "kg", Weight],
+                            ["height", "Panjang / tinggi badan", "cm", Ruler],
+                            ["head", "Lingkar kepala", "cm", CircleUserRound],
+                          ].map(([value, label, unit, Icon]) => (
+                            <button
+                              type="button"
+                              key={value}
+                              aria-pressed={metric === value}
+                              aria-controls="growth-chart-panel"
+                              onClick={() => setMetric(value)}
+                              title={
+                                "Lihat persentil WHO untuk " +
+                                label.toLowerCase()
+                              }
+                            >
+                              <Icon size={18} aria-hidden="true" />
+                              <span>
+                                {label}
+                                <small>{unit}</small>
+                              </span>
+                            </button>
+                          ))}
                         </div>
                         <Suspense
                           fallback={<p className="empty">Memuat kurva WHO…</p>}
