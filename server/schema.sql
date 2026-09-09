@@ -75,3 +75,14 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE TRIGGER IF NOT EXISTS notify_forum_comment AFTER INSERT ON forum_comments FOR EACH ROW INSERT INTO notifications(id,recipient_id,actor_id,topic_id,comment_id,kind) SELECT UUID(),t.user_id,NEW.user_id,NEW.topic_id,NEW.id,IF(NEW.reply_to_user_id=t.user_id,'reply','comment') FROM forum_topics t WHERE t.id=NEW.topic_id AND t.user_id<>NEW.user_id UNION ALL SELECT UUID(),NEW.reply_to_user_id,NEW.user_id,NEW.topic_id,NEW.id,'reply' FROM forum_topics t WHERE t.id=NEW.topic_id AND NEW.reply_to_user_id IS NOT NULL AND NEW.reply_to_user_id<>NEW.user_id AND NEW.reply_to_user_id<>t.user_id;
 CREATE TRIGGER IF NOT EXISTS notify_forum_like AFTER INSERT ON forum_likes FOR EACH ROW INSERT INTO notifications(id,recipient_id,actor_id,topic_id,kind) SELECT UUID(),t.user_id,NEW.user_id,NEW.topic_id,'like' FROM forum_topics t WHERE t.id=NEW.topic_id AND t.user_id<>NEW.user_id;
 CREATE TRIGGER IF NOT EXISTS remove_forum_like_notification AFTER DELETE ON forum_likes FOR EACH ROW DELETE FROM notifications WHERE topic_id=OLD.topic_id AND actor_id=OLD.user_id AND kind='like';
+CREATE TABLE IF NOT EXISTS forum_media (
+ id CHAR(36) PRIMARY KEY,
+ topic_id CHAR(36) NOT NULL,
+ comment_id CHAR(36) NULL,
+ mime VARCHAR(40) NOT NULL,
+ size INT UNSIGNED NOT NULL,
+ data MEDIUMBLOB NOT NULL,
+ INDEX(topic_id,comment_id),
+ FOREIGN KEY(topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE,
+ FOREIGN KEY(comment_id) REFERENCES forum_comments(id) ON DELETE CASCADE
+);

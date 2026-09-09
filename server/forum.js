@@ -1,3 +1,4 @@
+import { uploadMedia, saveMedia, listMedia, mediaRoute } from "./forumMedia.js";
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import rateLimit from "express-rate-limit";
@@ -22,7 +23,12 @@ const pageNumber = (v) => {
   return Number(v);
 };
 // Only public display names are selected. Emails and child records never enter forum responses.
-export function forumRouter({ query, demo, notifyUser = async () => {} }) {
+export function forumRouter({
+  query,
+  transaction,
+  demo,
+  notifyUser = async () => {},
+}) {
   const router = Router();
   router.use((req, res, next) =>
     demo
@@ -32,6 +38,7 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
         })
       : next(),
   );
+  router.get("/media/:mediaId", mediaRoute(query));
   router.use("/:id", async (req, res, next) => {
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
     const owner = (
@@ -72,13 +79,16 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
       error: "Terlalu banyak kiriman. Tunggu satu menit sebelum mencoba lagi.",
     },
   });
-  const selectTopic = `SELECT t.id,t.title,t.category,t.body,t.created_at,u.name AS author_name,(t.user_id=?) AS is_owner,(SELECT COUNT(*) FROM forum_comments c WHERE c.topic_id=t.id) AS comment_count,(SELECT COUNT(*) FROM forum_likes l WHERE l.topic_id=t.id) AS like_count,EXISTS(SELECT 1 FROM forum_likes l WHERE l.topic_id=t.id AND l.user_id=?) AS liked FROM forum_topics t JOIN users u ON u.id=t.user_id`;
+  const selectTopic = `SELECT t.id,t.title,t.category,t.body,t.created_at,u.name AS author_name,(t.user_id=?) AS is_owner,(SELECT COUNT(*) FROM forum_comments c WHERE c.topic_id=t.id) AS comment_count,(SELECT COUNT(*) FROM forum_media m WHERE m.topic_id=t.id AND m.comment_id IS NULL) AS media_count,(SELECT COUNT(*) FROM forum_likes l WHERE l.topic_id=t.id) AS like_count,EXISTS(SELECT 1 FROM forum_likes l WHERE l.topic_id=t.id AND l.user_id=?) AS liked FROM forum_topics t JOIN users u ON u.id=t.user_id`;
   const topic = async (id, user) => {
     const row = (
       await query(selectTopic + " WHERE t.id=?", [user.id, user.id, id])
     )[0];
     if (!row) throw fail("Diskusi tidak ditemukan atau sudah dihapus.", 404);
-    return row;
+    return {
+      ...row,
+      media: (await listMedia(query, id)).filter((m) => !m.comment_id),
+    };
   };
   router.get("/", async (req, res) => {
     const page = pageNumber(req.query.page),
@@ -121,17 +131,20 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
       categories: forumCategories,
     });
   });
-  router.post("/", writeLimit, async (req, res) => {
+  router.post("/", writeLimit, uploadMedia, async (req, res) => {
     const title = content(req.body.title, 160),
       body = content(req.body.body, 5000),
       category = req.body.category;
     if (!forumCategories.includes(category))
       throw fail("Pilih kategori diskusi yang tersedia.");
     const id = randomUUID();
-    await query(
-      "INSERT INTO forum_topics(id,user_id,title,category,body) VALUES(?,?,?,?,?)",
-      [id, req.user.id, title, category, body],
-    );
+    await transaction(async (query) => {
+      await query(
+        "INSERT INTO forum_topics(id,user_id,title,category,body) VALUES(?,?,?,?,?)",
+        [id, req.user.id, title, category, body],
+      );
+      await saveMedia(query, req.files, id);
+    });
     res.status(201).json(await topic(id, req.user));
   });
   router.get("/:id", async (req, res) =>
@@ -190,9 +203,18 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
       `SELECT c.id,c.body,c.created_at,c.parent_id,c.is_reply,ru.name AS reply_to_name,LEFT(p.body,160) AS parent_excerpt,u.name AS author_name,(c.user_id=?) AS is_owner FROM forum_comments c JOIN users u ON u.id=c.user_id LEFT JOIN forum_comments p ON p.id=c.parent_id LEFT JOIN users ru ON ru.id=c.reply_to_user_id WHERE c.topic_id=? ORDER BY c.created_at,c.id LIMIT 50 OFFSET ${(page - 1) * 50}`,
       [req.user.id, req.params.id],
     );
-    res.json({ items, total, page, pageSize: 50 });
+    const media = await listMedia(query, req.params.id);
+    res.json({
+      items: items.map((c) => ({
+        ...c,
+        media: media.filter((m) => m.comment_id === c.id),
+      })),
+      total,
+      page,
+      pageSize: 50,
+    });
   });
-  router.post("/:id/comments", writeLimit, async (req, res) => {
+  router.post("/:id/comments", writeLimit, uploadMedia, async (req, res) => {
     await topic(req.params.id, req.user);
     const body = content(req.body.body, 2000),
       id = randomUUID();
@@ -211,18 +233,21 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
         throw fail("Komentar tujuan tidak ditemukan atau sudah dihapus.", 404);
     }
     try {
-      await query(
-        "INSERT INTO forum_comments(id,topic_id,user_id,body,parent_id,reply_to_user_id,is_reply) VALUES(?,?,?,?,?,?,?)",
-        [
-          id,
-          req.params.id,
-          req.user.id,
-          body,
-          parent?.id ?? null,
-          parent?.user_id ?? null,
-          Boolean(parent),
-        ],
-      );
+      await transaction(async (query) => {
+        await query(
+          "INSERT INTO forum_comments(id,topic_id,user_id,body,parent_id,reply_to_user_id,is_reply) VALUES(?,?,?,?,?,?,?)",
+          [
+            id,
+            req.params.id,
+            req.user.id,
+            body,
+            parent?.id ?? null,
+            parent?.user_id ?? null,
+            Boolean(parent),
+          ],
+        );
+        await saveMedia(query, req.files, req.params.id, id);
+      });
     } catch (e) {
       if (e.code === "ER_NO_REFERENCED_ROW_2")
         throw fail("Diskusi sudah dihapus.", 404);

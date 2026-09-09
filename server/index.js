@@ -68,6 +68,22 @@ async function query(sql, params = []) {
   const [rows] = await db.execute(sql, params);
   return rows;
 }
+async function transaction(work) {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await work(
+      async (sql, params = []) => (await connection.execute(sql, params))[0],
+    );
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
 async function owned(id, user) {
   const c = demo
     ? children.get(id)
@@ -159,7 +175,14 @@ app.use("/api", (req, res, next) => {
       return res
         .status(403)
         .json({ error: "Asal permintaan tidak diizinkan." });
-    if (!req.is("application/json"))
+    if (
+      !req.is("application/json") &&
+      !(
+        req.method === "POST" &&
+        /^\/forum(?:\/[a-f0-9-]{36}\/comments)?\/?$/i.test(req.path) &&
+        req.is("multipart/form-data")
+      )
+    )
       return res.status(415).json({ error: "Gunakan JSON." });
   }
   next();
@@ -296,7 +319,7 @@ app.use("/api", (req, res, next) =>
     : res.status(401).json({ error: "Silakan masuk terlebih dahulu." }),
 );
 app.use("/api/notifications", notificationRouter({ query, demo, notifyUser }));
-app.use("/api/forum", forumRouter({ query, demo, notifyUser }));
+app.use("/api/forum", forumRouter({ query, transaction, demo, notifyUser }));
 app.get("/api/articles", (req, res) => res.json(articleSummaries));
 app.get("/api/articles/:slug", (req, res) => {
   const article = articles.find((item) => item.slug === req.params.slug);

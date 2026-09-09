@@ -1,3 +1,4 @@
+import { MediaGallery, MediaPicker } from "./ForumMedia";
 import { threadComments } from "./forumThreads";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -32,15 +33,26 @@ const formatDate = (value) =>
 async function request(path = "", options = {}) {
   const r = await fetch("/api/forum" + path, {
     ...options,
-    headers: { "Content-Type": "application/json" },
+    headers:
+      options.body instanceof FormData
+        ? {}
+        : { "Content-Type": "application/json" },
   });
   const data = await r.json();
   if (!r.ok)
     throw new Error(data.error || "Forum belum dapat dimuat. Coba kembali.");
   return data;
 }
-const send = (path, body) =>
-  request(path, { method: "POST", body: JSON.stringify(body) });
+const send = (path, body, files = []) => {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(body))
+    if (value != null) form.append(key, value);
+  for (const file of files) form.append("media", file);
+  return request(path, {
+    method: "POST",
+    body: files.length ? form : JSON.stringify(body),
+  });
+};
 function Author({ name, date }) {
   return (
     <div className="forum-author">
@@ -230,6 +242,11 @@ function TopicList({ open, refresh }) {
                       </button>
                     </h2>
                     <p className="muted forum-excerpt">{t.excerpt}</p>
+                    {t.media_count > 0 && (
+                      <span className="fine">
+                        {t.media_count} lampiran foto / video
+                      </span>
+                    )}
                     <Author name={t.author_name} date={t.created_at} />
                     <div className="forum-card-actions">
                       <LikeButton
@@ -300,6 +317,7 @@ function TopicList({ open, refresh }) {
   );
 }
 function NewTopic({ onCreated, onCancel }) {
+  const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   return (
@@ -315,6 +333,7 @@ function NewTopic({ onCreated, onCancel }) {
             const t = await send(
               "",
               Object.fromEntries(new FormData(e.target)),
+              files,
             );
             onCreated(t.id);
           } catch (e) {
@@ -351,9 +370,10 @@ function NewTopic({ onCreated, onCancel }) {
             placeholder="Ceritakan pengalamanmu atau hal yang ingin kamu diskusikan…"
           />
         </label>
+        <MediaPicker files={files} onChange={setFiles} disabled={busy} />
         <p className="fine">
-          Kiriman dapat dibaca semua pengguna yang login. Hindari mencantumkan
-          alamat, nomor telepon, atau data pribadi anak.
+          Kiriman dan lampiran dapat dibaca semua pengguna yang login. Hindari
+          mencantumkan alamat, nomor telepon, atau data pribadi anak.
         </p>
         {error && (
           <p role="alert" className="error">
@@ -379,6 +399,7 @@ function NewTopic({ onCreated, onCancel }) {
   );
 }
 function Discussion({ id, onBack }) {
+  const [files, setFiles] = useState([]);
   const [topic, setTopic] = useState(null),
     [comments, setComments] = useState(null),
     [page, setPage] = useState(1),
@@ -486,6 +507,7 @@ function Discussion({ id, onBack }) {
               </h1>
               <Author name={topic.author_name} date={topic.created_at} />
               <p className="forum-body">{topic.body}</p>
+              <MediaGallery items={topic.media} />
               <div className="forum-detail-like">
                 <LikeButton
                   topic={topic}
@@ -554,6 +576,7 @@ function Discussion({ id, onBack }) {
                       </div>
                     )}
                     <p className="forum-body">{c.body}</p>
+                    <MediaGallery items={c.media} />
                     <button
                       className="forum-reply-button"
                       disabled={busy}
@@ -607,10 +630,15 @@ function Discussion({ id, onBack }) {
                   setBusy(true);
                   setError("");
                   try {
-                    await send("/" + id + "/comments", {
-                      body: reply,
-                      parent_id: replyTarget?.id ?? null,
-                    });
+                    await send(
+                      "/" + id + "/comments",
+                      {
+                        body: reply,
+                        parent_id: replyTarget?.id ?? null,
+                      },
+                      files,
+                    );
+                    setFiles([]);
                     setReplyTarget(null);
                     setReply("");
                     const t = await request("/" + id);
@@ -640,6 +668,11 @@ function Discussion({ id, onBack }) {
                     placeholder="Bagikan pengalaman atau dukungan dengan bahasa yang baik…"
                   />
                 </label>
+                <MediaPicker
+                  files={files}
+                  onChange={setFiles}
+                  disabled={busy}
+                />
                 <div className="forum-actions">
                   <span className="fine">{reply.length}/2.000 karakter</span>
                   <button className="primary" disabled={busy || !reply.trim()}>
