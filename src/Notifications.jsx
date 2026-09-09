@@ -205,7 +205,8 @@ export default function Notifications({ onOpen }) {
                 <span className="notification-copy">
                   <span>
                     <strong>{item.actor_name}</strong>{" "}
-                    {item.kind === "like" ? "menyukai" : "membalas"} diskusimu
+                    {item.kind === "like" ? "menyukai" : "membalas"}{" "}
+                    {item.kind === "reply" ? "komentarmu" : "diskusimu"}
                   </span>
                   <span className="notification-title">{item.topic_title}</span>
                   <span className="notification-date">

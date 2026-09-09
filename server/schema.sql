@@ -36,6 +36,11 @@ CREATE TABLE IF NOT EXISTS forum_comments (
  id CHAR(36) PRIMARY KEY,
  topic_id CHAR(36) NOT NULL,
  user_id CHAR(36) NOT NULL,
+ parent_id CHAR(36) NULL,
+ reply_to_user_id CHAR(36) NULL,
+ is_reply BOOLEAN NOT NULL DEFAULT FALSE,
+ FOREIGN KEY(parent_id) REFERENCES forum_comments(id) ON DELETE SET NULL,
+ FOREIGN KEY(reply_to_user_id) REFERENCES users(id) ON DELETE SET NULL,
  body TEXT NOT NULL,
  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
  FOREIGN KEY (topic_id) REFERENCES forum_topics(id) ON DELETE CASCADE,
@@ -57,7 +62,7 @@ CREATE TABLE IF NOT EXISTS notifications (
  actor_id CHAR(36) NOT NULL,
  topic_id CHAR(36) NOT NULL,
  comment_id CHAR(36) NULL,
- kind ENUM('comment','like') NOT NULL,
+ kind ENUM('comment','like','reply') NOT NULL,
  created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
  read_at TIMESTAMP(3) NULL,
  FOREIGN KEY(recipient_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -67,6 +72,6 @@ CREATE TABLE IF NOT EXISTS notifications (
  INDEX notification_feed(recipient_id,created_at,id),
  INDEX notification_unread(recipient_id,read_at)
 );
-CREATE TRIGGER IF NOT EXISTS notify_forum_comment AFTER INSERT ON forum_comments FOR EACH ROW INSERT INTO notifications(id,recipient_id,actor_id,topic_id,comment_id,kind) SELECT UUID(),t.user_id,NEW.user_id,NEW.topic_id,NEW.id,'comment' FROM forum_topics t WHERE t.id=NEW.topic_id AND t.user_id<>NEW.user_id;
+CREATE TRIGGER IF NOT EXISTS notify_forum_comment AFTER INSERT ON forum_comments FOR EACH ROW INSERT INTO notifications(id,recipient_id,actor_id,topic_id,comment_id,kind) SELECT UUID(),t.user_id,NEW.user_id,NEW.topic_id,NEW.id,IF(NEW.reply_to_user_id=t.user_id,'reply','comment') FROM forum_topics t WHERE t.id=NEW.topic_id AND t.user_id<>NEW.user_id UNION ALL SELECT UUID(),NEW.reply_to_user_id,NEW.user_id,NEW.topic_id,NEW.id,'reply' FROM forum_topics t WHERE t.id=NEW.topic_id AND NEW.reply_to_user_id IS NOT NULL AND NEW.reply_to_user_id<>NEW.user_id AND NEW.reply_to_user_id<>t.user_id;
 CREATE TRIGGER IF NOT EXISTS notify_forum_like AFTER INSERT ON forum_likes FOR EACH ROW INSERT INTO notifications(id,recipient_id,actor_id,topic_id,kind) SELECT UUID(),t.user_id,NEW.user_id,NEW.topic_id,'like' FROM forum_topics t WHERE t.id=NEW.topic_id AND t.user_id<>NEW.user_id;
 CREATE TRIGGER IF NOT EXISTS remove_forum_like_notification AFTER DELETE ON forum_likes FOR EACH ROW DELETE FROM notifications WHERE topic_id=OLD.topic_id AND actor_id=OLD.user_id AND kind='like';

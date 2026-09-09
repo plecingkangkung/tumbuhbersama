@@ -215,3 +215,17 @@ Untuk deployment, reverse proxy harus meneruskan HTTP Upgrade pada `/socket.io/`
 `server/realtime.test.js` mencakup pengiriman lewat WebSocket, isolasi tiga akun, dua tab, penolakan koneksi tanpa sesi/origin asing, sinkronisasi dibaca, koneksi ulang, batal like, dan logout. Aktifkan `TEST_MYSQL=true`; `TEST_LIVE_SOCKET=true` menjalankan tes ini melalui server lokal port 5173. Akun uji dihapus setelah selesai.
 
 Referensi implementasi: [middleware autentikasi Socket.IO](https://socket.io/docs/v4/middlewares/), [rooms](https://socket.io/docs/v4/rooms/), dan [opsi client](https://socket.io/docs/v4/client-options/).
+
+## Balas komentar dan mention
+
+Setiap komentar mempunyai tombol **Balas**. Tombol tersebut memilih komentar tujuan, menampilkan nama `@pengguna` dan kutipannya, lalu memfokuskan kolom balasan. Balasan dapat dibalas lagi. Mention di sini ditentukan dari komentar tujuan, bukan pencarian nama bebas lewat pengetikan `@`.
+
+`POST /api/forum/:id/comments` menerima `parent_id` opsional. Server memastikan komentar tersebut masih ada dalam diskusi yang sama dan mengambil penulisnya dari database, sehingga client tidak dapat memalsukan penerima mention. Respons komentar menyertakan `parent_id`, `is_reply`, `reply_to_name`, dan `parent_excerpt`, tanpa email atau ID akun penerima.
+
+Daftar mengelompokkan balasan di bawah komentar asal yang tersedia pada halaman yang sama. Indentasi dibatasi dua tingkat agar tetap nyaman di ponsel; relasi reply tetap dapat berlanjut lebih dalam. Jika komentar asal berada pada halaman lain, kutipannya tetap ditampilkan. Menghapus komentar asal mempertahankan balasannya dengan penanda bahwa komentar asal telah dihapus.
+
+Penulis komentar tujuan menerima notifikasi jenis `reply` melalui WebSocket. Pemilik topik tetap menerima notifikasi, tanpa duplikasi jika ia juga penerima reply, dan aktivitas sendiri tidak memicu notifikasi untuk diri sendiri. Penerima diambil server dari relasi komentar.
+
+Migrasi `server/migrations/004_comment_replies.sql` sudah diterapkan pada Laragon lokal. Jalankan sekali pada database versi sebelumnya; migrasi menambah relasi self-reference, penerima reply, jenis notifikasi, dan memperbarui trigger komentar. `server/schema.sql` menyediakan struktur terbaru untuk instalasi baru.
+
+Pengujian `server/replies.test.js` mencakup pengelompokan komentar, reply dari tiga akun, reply terhadap reply, penerima mention yang tidak dapat dipalsukan, notifikasi WebSocket, validasi lintas topik, reply ke diri sendiri, dan penghapusan komentar asal. `TEST_MYSQL=true` mengaktifkan pengujian database; `TEST_LIVE_REPLIES=true` menguji lewat server aktif port 5173.

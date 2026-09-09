@@ -39,13 +39,28 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
         req.params.id,
       ])
     )[0];
-    if (owner)
-      res.on("finish", () => {
-        if (res.statusCode < 400)
-          notifyUser(owner.user_id).catch(() =>
-            console.error("Notification delivery failed."),
+    const recipients = await query(
+      "SELECT DISTINCT recipient_id FROM notifications WHERE topic_id=?",
+      [req.params.id],
+    );
+    if (owner) recipients.push({ recipient_id: owner.user_id });
+    const topicId = req.params.id;
+    res.on("finish", () => {
+      if (res.statusCode < 400)
+        (async () => {
+          const current = await query(
+            "SELECT DISTINCT recipient_id FROM notifications WHERE topic_id=?",
+            [topicId],
           );
-      });
+          await Promise.all(
+            [
+              ...new Set(
+                [...recipients, ...current].map((r) => r.recipient_id),
+              ),
+            ].map(notifyUser),
+          );
+        })().catch(() => console.error("Notification delivery failed."));
+    });
     next();
   });
   const writeLimit = rateLimit({
@@ -172,7 +187,7 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
       )
     )[0].total;
     const items = await query(
-      `SELECT c.id,c.body,c.created_at,u.name AS author_name,(c.user_id=?) AS is_owner FROM forum_comments c JOIN users u ON u.id=c.user_id WHERE c.topic_id=? ORDER BY c.created_at,c.id LIMIT 50 OFFSET ${(page - 1) * 50}`,
+      `SELECT c.id,c.body,c.created_at,c.parent_id,c.is_reply,ru.name AS reply_to_name,LEFT(p.body,160) AS parent_excerpt,u.name AS author_name,(c.user_id=?) AS is_owner FROM forum_comments c JOIN users u ON u.id=c.user_id LEFT JOIN forum_comments p ON p.id=c.parent_id LEFT JOIN users ru ON ru.id=c.reply_to_user_id WHERE c.topic_id=? ORDER BY c.created_at,c.id LIMIT 50 OFFSET ${(page - 1) * 50}`,
       [req.user.id, req.params.id],
     );
     res.json({ items, total, page, pageSize: 50 });
@@ -181,10 +196,32 @@ export function forumRouter({ query, demo, notifyUser = async () => {} }) {
     await topic(req.params.id, req.user);
     const body = content(req.body.body, 2000),
       id = randomUUID();
+    const parentId = req.body.parent_id ?? null;
+    let parent = null;
+    if (parentId !== null) {
+      if (typeof parentId !== "string" || !/^[a-f0-9-]{36}$/i.test(parentId))
+        throw fail("Komentar tujuan tidak valid.");
+      parent = (
+        await query(
+          "SELECT id,user_id FROM forum_comments WHERE id=? AND topic_id=?",
+          [parentId, req.params.id],
+        )
+      )[0];
+      if (!parent)
+        throw fail("Komentar tujuan tidak ditemukan atau sudah dihapus.", 404);
+    }
     try {
       await query(
-        "INSERT INTO forum_comments(id,topic_id,user_id,body) VALUES(?,?,?,?)",
-        [id, req.params.id, req.user.id, body],
+        "INSERT INTO forum_comments(id,topic_id,user_id,body,parent_id,reply_to_user_id,is_reply) VALUES(?,?,?,?,?,?,?)",
+        [
+          id,
+          req.params.id,
+          req.user.id,
+          body,
+          parent?.id ?? null,
+          parent?.user_id ?? null,
+          Boolean(parent),
+        ],
       );
     } catch (e) {
       if (e.code === "ER_NO_REFERENCED_ROW_2")

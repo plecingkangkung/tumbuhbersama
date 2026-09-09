@@ -1,6 +1,9 @@
+import { threadComments } from "./forumThreads";
 import { useEffect, useRef, useState } from "react";
 import {
   MessagesSquare,
+  Reply,
+  X,
   Heart,
   MessageCircle,
   Plus,
@@ -384,8 +387,10 @@ function Discussion({ id, onBack }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
-    [reply, setReply] = useState("");
-  const heading = useRef(null);
+    [reply, setReply] = useState(""),
+    [replyTarget, setReplyTarget] = useState(null);
+  const heading = useRef(null),
+    replyInput = useRef(null);
   useEffect(() => {
     const abort = new AbortController();
     Promise.all([
@@ -511,8 +516,12 @@ function Discussion({ id, onBack }) {
                 </p>
               )}
               {comments?.items.length ? (
-                comments.items.map((c) => (
-                  <article className="forum-comment" key={c.id}>
+                threadComments(comments.items).map((c) => (
+                  <article
+                    className={`forum-comment ${c.is_reply ? "forum-nested-reply" : ""}`}
+                    style={{ "--reply-depth": c.depth }}
+                    key={c.id}
+                  >
                     <div className="section-heading">
                       <Author name={c.author_name} date={c.created_at} />
                       {Boolean(c.is_owner) && (
@@ -526,7 +535,40 @@ function Discussion({ id, onBack }) {
                         </button>
                       )}
                     </div>
+                    {Boolean(c.is_reply) && (
+                      <div className="forum-reply-context">
+                        <Reply size={14} />
+                        <span>
+                          Membalas{" "}
+                          <strong>@{c.reply_to_name || "pengguna"}</strong>
+                          {c.parent_id ? (
+                            <span className="forum-parent-excerpt">
+                              {c.parent_excerpt}
+                            </span>
+                          ) : (
+                            <span className="forum-parent-excerpt">
+                              Komentar asal sudah dihapus.
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
                     <p className="forum-body">{c.body}</p>
+                    <button
+                      className="forum-reply-button"
+                      disabled={busy}
+                      onClick={() => {
+                        setReplyTarget(c);
+                        replyInput.current?.focus();
+                        replyInput.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                      }}
+                    >
+                      <Reply size={15} />
+                      Balas
+                    </button>
                   </article>
                 ))
               ) : (
@@ -541,6 +583,23 @@ function Discussion({ id, onBack }) {
                 disabled={busy}
                 onChange={setPage}
               />
+              {replyTarget && (
+                <div className="forum-reply-target">
+                  <div>
+                    <span>
+                      Membalas <strong>@{replyTarget.author_name}</strong>
+                    </span>
+                    <p>{replyTarget.body}</p>
+                  </div>
+                  <button
+                    disabled={busy}
+                    aria-label="Batalkan balasan ke komentar"
+                    onClick={() => setReplyTarget(null)}
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+              )}
               <form
                 className="forum-reply-form"
                 onSubmit={async (e) => {
@@ -548,7 +607,11 @@ function Discussion({ id, onBack }) {
                   setBusy(true);
                   setError("");
                   try {
-                    await send("/" + id + "/comments", { body: reply });
+                    await send("/" + id + "/comments", {
+                      body: reply,
+                      parent_id: replyTarget?.id ?? null,
+                    });
+                    setReplyTarget(null);
                     setReply("");
                     const t = await request("/" + id);
                     setPage(Math.max(1, Math.ceil(t.comment_count / 50)));
@@ -562,8 +625,13 @@ function Discussion({ id, onBack }) {
                 }}
               >
                 <label className="field">
-                  <span>Tulis balasan</span>
+                  <span>
+                    {replyTarget
+                      ? `Balas @${replyTarget.author_name}`
+                      : "Tulis balasan"}
+                  </span>
                   <textarea
+                    ref={replyInput}
                     required
                     maxLength={2000}
                     rows={4}
