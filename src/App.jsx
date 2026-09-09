@@ -1,3 +1,4 @@
+import ChildPicker from "./ChildPicker";
 import Forum from "./Forum";
 import Articles from "./Articles";
 import { useEffect, useState } from "react";
@@ -492,39 +493,15 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <section className="child-strip">
-                <div className="child-avatar">
-                  <Sprout size={35} />
-                </div>
-                <div className="grow">
-                  <label className="fine" htmlFor="child-select">
-                    PROFIL SI KECIL
-                  </label>
-                  <select
-                    id="child-select"
-                    value={selected}
-                    onChange={(e) => setSelected(e.target.value)}
-                  >
-                    {!children.length && (
-                      <option value="">Belum ada profil anak</option>
-                    )}
-                    {children.map((c) => (
-                      <option value={c.id} key={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  {child && (
-                    <p className="muted text-sm">
-                      {age(child.dob)} <span className="mx-2">·</span> Lahir{" "}
-                      {date(child.dob)}
-                    </p>
-                  )}
-                </div>
-                <button className="secondary" onClick={() => open("child")}>
-                  <Plus size={16} /> Tambah anak
-                </button>
-              </section>
+              <ChildPicker
+                children={children}
+                selected={selected}
+                onSelect={setSelected}
+                onAdd={() => open("child")}
+                subtitle={
+                  child ? `${age(child.dob)} · Lahir ${date(child.dob)}` : ""
+                }
+              />
               {!child ? (
                 <section className="card empty">
                   <Sprout size={40} />
