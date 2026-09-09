@@ -1,10 +1,13 @@
+import BrandMark from "./BrandMark";
+import ResponsiveSidebar from "./ResponsiveSidebar";
 import Notifications from "./Notifications";
 import ChildPicker from "./ChildPicker";
 import Forum from "./Forum";
 import Articles from "./Articles";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Sprout,
+  Menu,
   LayoutDashboard,
   TrendingUp,
   BookHeart,
@@ -143,6 +146,8 @@ function Chart({ records, metric }) {
   );
 }
 export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
   const [user, setUser] = useState(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -255,7 +260,7 @@ export default function App() {
       <main className="auth">
         <section className="auth-story">
           <div className="brand">
-            <Sprout /> TumbuhBersama
+            <BrandMark /> TumbuhBersama
           </div>
           <span className="eyebrow">SETIAP LANGKAH KECIL, BERARTI.</span>
           <h1>
@@ -268,7 +273,7 @@ export default function App() {
             perjalanan si kecil.
           </p>
           <div className="story-mark">
-            <Sprout size={100} />
+            <BrandMark size={100} />
             <span>Tumbuh, bersama kasih.</span>
           </div>
         </section>
@@ -348,15 +353,15 @@ export default function App() {
     );
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <ResponsiveSidebar open={menuOpen} onClose={closeMenu}>
         <div className="brand">
-          <Sprout />
+          <BrandMark />
           <span>
             Tumbuh<span className="font-normal">Bersama</span>
           </span>
         </div>
         <span className="eyebrow nav-label">RUANG KELUARGA</span>
-        <nav>
+        <nav aria-label="Navigasi utama">
           {[
             ["Ringkasan", LayoutDashboard],
             ["Pertumbuhan", TrendingUp],
@@ -368,8 +373,10 @@ export default function App() {
             <button
               key={name}
               className={tab === name ? "active" : ""}
+              aria-current={tab === name ? "page" : undefined}
               onClick={() => {
                 setTab(name);
+                closeMenu();
                 if (name === "Forum")
                   setForumTarget((current) => ({
                     id: "list",
@@ -392,6 +399,7 @@ export default function App() {
           onClick={async () => {
             try {
               await post("/logout", {});
+              closeMenu();
               setUser(null);
               setChildren([]);
               setRecords([]);
@@ -403,10 +411,24 @@ export default function App() {
         >
           <LogOut size={18} /> Keluar
         </button>
-      </aside>
+      </ResponsiveSidebar>
       <div className="workspace">
         <header className="topbar">
-          <span>
+          <div className="mobile-header-brand">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label="Buka menu navigasi"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Menu size={22} />
+            </button>
+            <BrandMark size={32} />
+            <span>TumbuhBersama</span>
+          </div>
+          <span className="desktop-breadcrumb">
             Ruang keluarga <span className="muted">/ {tab}</span>
           </span>
           <div className="flex items-center gap-3">
@@ -446,6 +468,7 @@ export default function App() {
                   onClick={async () => {
                     try {
                       await post("/logout", {});
+                      closeMenu();
                       setUser(null);
                       setChildren([]);
                       setRecords([]);
