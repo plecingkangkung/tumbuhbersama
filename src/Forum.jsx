@@ -228,24 +228,24 @@ function TopicList({ open, refresh }) {
                     </h2>
                     <p className="muted forum-excerpt">{t.excerpt}</p>
                     <Author name={t.author_name} date={t.created_at} />
-                  </div>
-                  <div className="forum-card-actions">
-                    <LikeButton
-                      topic={t}
-                      onChange={(result) =>
-                        setData((current) => ({
-                          ...current,
-                          items: current.items.map((item) =>
-                            item.id === t.id ? { ...item, ...result } : item,
-                          ),
-                        }))
-                      }
-                    />
-                    <span className="forum-replies">
-                      <MessageCircle size={20} />
-                      {t.comment_count}
-                      <span>balasan</span>
-                    </span>
+                    <div className="forum-card-actions">
+                      <LikeButton
+                        topic={t}
+                        onChange={(result) =>
+                          setData((current) => ({
+                            ...current,
+                            items: current.items.map((item) =>
+                              item.id === t.id ? { ...item, ...result } : item,
+                            ),
+                          }))
+                        }
+                      />
+                      <span className="forum-replies">
+                        <MessageCircle size={20} />
+                        {t.comment_count}
+                        <span>balasan</span>
+                      </span>
+                    </div>
                   </div>
                 </article>
               ))}
