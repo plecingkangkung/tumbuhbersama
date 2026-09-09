@@ -358,7 +358,42 @@ export function childCalendar({
     await notifyUser(req.user.id);
     res.json({ ok: true });
   });
+  async function rebase(child, q = query) {
+    const items = demo
+      ? memory.get(child.id) || []
+      : await q("SELECT * FROM calendar_events WHERE child_id=? FOR UPDATE", [
+          child.id,
+        ]);
+    const changes = items.map((e) => {
+      const v = vaccineSchedule.find((v) => v.key === e.vaccine_key);
+      const dates = v ? vaccineDates(child.dob, v) : {};
+      const automatic =
+        v && e.status === "planned" && e.due_date === e.window_start;
+      const due = automatic ? dates.due_date : e.due_date;
+      if (
+        (e.completed_date && e.completed_date < child.dob) ||
+        (e.status !== "cancelled" && due < child.dob)
+      )
+        throw fail(
+          "Tanggal lahir melewati catatan kalender. Periksa tanggal jadwal atau pelaksanaan terlebih dahulu.",
+        );
+      return { e, v, dates, due };
+    });
+    for (const { e, v, dates, due } of changes) {
+      if (!v) continue;
+      if (demo) Object.assign(e, dates, { due_date: due });
+      else {
+        await q(
+          "UPDATE calendar_events SET due_date=?,window_start=?,window_end=? WHERE id=?",
+          [due, dates.window_start, dates.window_end, e.id],
+        );
+        if (due !== e.due_date)
+          await q("DELETE FROM calendar_reminders WHERE event_id=?", [e.id]);
+      }
+    }
+  }
   return {
+    rebase,
     router,
     drain: async () => {
       if (sweepPending) await sweepPending;

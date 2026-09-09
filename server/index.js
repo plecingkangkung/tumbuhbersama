@@ -388,6 +388,62 @@ app.post("/api/children", async (req, res) => {
     );
   res.status(201).json(c);
 });
+app.put("/api/children/:id", async (req, res) => {
+  const previous = await owned(req.params.id, req.user);
+  const name = text(req.body.name, 80),
+    dob = validDate(req.body.dob),
+    sex = req.body.sex;
+  if (
+    dob > nowDate() ||
+    dob < "1900-01-01" ||
+    !["female", "male"].includes(sex)
+  )
+    throw fail("Tanggal lahir atau jenis kelamin tidak valid.");
+  const updated = { ...previous, name, dob, sex };
+  const conflict = () =>
+    fail(
+      "Tanggal lahir melewati catatan pertumbuhan atau milestone yang sudah ada. Periksa tanggal catatan terlebih dahulu.",
+    );
+  if (demo) {
+    if (dob !== previous.dob) {
+      if (
+        [...records.values()].some(
+          (r) => r.child_id === previous.id && r.date < dob,
+        ) ||
+        milestones.entries(previous.id).some((r) => r.observed_date < dob)
+      )
+        throw conflict();
+      await calendar.rebase(updated);
+    }
+    children.set(previous.id, updated);
+  } else
+    await transaction(async (q) => {
+      const [current] = await q(
+        "SELECT * FROM children WHERE id=? AND user_id=? FOR UPDATE",
+        [previous.id, req.user.id],
+      );
+      if (!current) throw fail("Profil anak tidak ditemukan.", 404);
+      if (dob !== current.dob) {
+        const history = await q(
+          "SELECT id FROM records WHERE child_id=? AND date<? LIMIT 1",
+          [previous.id, dob],
+        );
+        const observed = await q(
+          "SELECT milestone_id FROM child_milestones WHERE child_id=? AND observed_date<? LIMIT 1",
+          [previous.id, dob],
+        );
+        if (history.length || observed.length) throw conflict();
+        await calendar.rebase(updated, q);
+      }
+      await q(
+        "UPDATE children SET name=?,dob=?,sex=? WHERE id=? AND user_id=?",
+        [name, dob, sex, previous.id, req.user.id],
+      );
+    });
+  await calendar.processReminders();
+  await notifyUser(req.user.id);
+  res.json(updated);
+});
 const milestones = milestoneRouter({ query, demo, owned, validDate, nowDate });
 app.use("/api/children/:id/milestones", milestones.router);
 app.put("/api/children/:id/records/:recordId/position", async (req, res) => {

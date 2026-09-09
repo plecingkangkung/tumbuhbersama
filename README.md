@@ -283,3 +283,9 @@ Database lama perlu menjalankan `server/migrations/008_child_calendar.sql` (suda
 Seluruh area kartu artikel membuka halaman baca internal melalui tombol yang juga bisa diakses dengan keyboard. Empat artikel editorial memiliki enam bagian, contoh praktis, daftar isi, tanggal pembaruan, durasi baca, serta tautan rujukan. Tulisan ini merupakan konten TumbuhBersama, bukan salinan lengkap publikasi WHO/UNICEF.
 
 Artikel disajikan melalui API internal `GET /api/articles` (metadata/ringkasan) dan `GET /api/articles/:slug` (isi lengkap), dengan sumber konten di `server/articles.js`. Belum ada API berita eksternal, sinkronisasi otomatis, atau CMS; penambahan/pembaruan tulisan masih melalui perubahan konten server. Refresh halaman mengambil ulang data server tetapi tidak menghasilkan artikel baru.
+
+## Edit profil anak
+
+Tombol **Edit profil** berada di samping Tambah anak. Nama panggilan, tanggal lahir, dan jenis kelamin dapat diperbarui melalui PUT /api/children/:id oleh pemilik akun. Form menampilkan nilai lama; pembatalan tidak menyimpan perubahan. Tidak ada migrasi database tambahan.
+
+Perubahan tanggal lahir menyesuaikan usia, referensi pertumbuhan, dan periode vaksin. Vaksin berstatus planned yang tanggalnya masih sama dengan awal periode acuan mengikuti tanggal lahir baru. Jadwal yang tanggalnya sudah dipindahkan, dibatalkan, atau selesai dipertahankan; pengingat target yang berubah diatur ulang. Tanggal lahir yang melewati catatan pengukuran/jurnal, pengamatan milestone, atau jadwal/pelaksanaan yang dipertahankan ditolak agar riwayat tidak menjadi sebelum kelahiran. Perubahan database dijalankan dalam transaksi.

@@ -32,11 +32,9 @@ export function milestoneRouter({ query, demo, owned, validDate, nowDate }) {
     }
     const date = validDate(req.body.observed_date);
     if (date < child.dob || date > nowDate())
-      return res
-        .status(400)
-        .json({
-          error: "Tanggal pengamatan harus antara kelahiran dan hari ini.",
-        });
+      return res.status(400).json({
+        error: "Tanggal pengamatan harus antara kelahiran dan hari ini.",
+      });
     const entry = { milestone_id: id, observed_date: date };
     if (demo) {
       if (!memory.has(child.id)) memory.set(child.id, new Map());
@@ -48,5 +46,9 @@ export function milestoneRouter({ query, demo, owned, validDate, nowDate }) {
       );
     res.json({ ...entry, checked: true });
   });
-  return { router, clear: (childId) => memory.delete(childId) };
+  return {
+    entries: (id) => [...(memory.get(id)?.values() ?? [])],
+    router,
+    clear: (childId) => memory.delete(childId),
+  };
 }

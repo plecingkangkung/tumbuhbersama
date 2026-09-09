@@ -141,6 +141,100 @@ test(
       assert.equal((await api(p, undefined, b.cookie)).status, 404);
       for (let i = 0; i < 2; i++)
         assert.equal((await api(p, undefined, a.cookie)).data.items.length, 20);
+      const profilePath = "/children/" + child.data.id;
+      const profile = {
+        name: "Nama diperbarui",
+        dob: "2019-01-31",
+        sex: "male",
+      };
+      assert.equal(
+        (await api(profilePath, profile, b.cookie, "PUT")).status,
+        404,
+      );
+      assert.equal(
+        (
+          await api(
+            profilePath,
+            { ...profile, dob: "2099-01-01" },
+            a.cookie,
+            "PUT",
+          )
+        ).status,
+        400,
+      );
+      assert.equal(
+        (await api(profilePath, profile, a.cookie, "PUT")).status,
+        200,
+      );
+      let updatedChild = (
+        await api("/children", undefined, a.cookie)
+      ).data.find((c) => c.id === child.data.id);
+      assert.equal(updatedChild.name, profile.name);
+      assert.equal(updatedChild.sex, "male");
+      let vaccines = (await api(p, undefined, a.cookie)).data.items;
+      assert.equal(
+        vaccines.find((e) => e.vaccine_key === "bcg").due_date,
+        "2019-02-28",
+      );
+      const manual = vaccines.find((e) => e.vaccine_key === "pcv1");
+      assert.equal(
+        (
+          await api(
+            p + "/" + manual.id,
+            { ...manual, due_date: "2021-05-01" },
+            a.cookie,
+            "PUT",
+          )
+        ).status,
+        200,
+      );
+      assert.equal(
+        (
+          await api(
+            profilePath,
+            { ...profile, dob: "2020-01-31" },
+            a.cookie,
+            "PUT",
+          )
+        ).status,
+        200,
+      );
+      vaccines = (await api(p, undefined, a.cookie)).data.items;
+      assert.equal(
+        vaccines.find((e) => e.vaccine_key === "bcg").due_date,
+        "2020-02-29",
+      );
+      assert.equal(
+        vaccines.find((e) => e.id === manual.id).due_date,
+        "2021-05-01",
+      );
+      const historical = await api(
+        profilePath + "/records",
+        {
+          kind: "journal",
+          date: "2020-02-01",
+          title: "Riwayat",
+          category: "Interaksi sosial",
+          notes: "Fixture",
+        },
+        a.cookie,
+      );
+      assert.equal(historical.status, 201);
+      assert.equal(
+        (
+          await api(
+            profilePath,
+            { ...profile, dob: "2020-03-01" },
+            a.cookie,
+            "PUT",
+          )
+        ).status,
+        400,
+      );
+      updatedChild = (await api("/children", undefined, a.cookie)).data.find(
+        (c) => c.id === child.data.id,
+      );
+      assert.equal(updatedChild.dob, "2020-01-31");
       const visit = await api(
         `/children/${child.data.id}/records`,
         {

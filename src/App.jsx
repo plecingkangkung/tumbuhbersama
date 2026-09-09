@@ -157,7 +157,14 @@ export default function App() {
     setError("");
     try {
       const body = Object.fromEntries(new FormData(e.target));
-      if (modal === "child") {
+      if (modal === "edit-child") {
+        const updated = await api("/children/" + selected, {
+          method: "PUT",
+          body: JSON.stringify(body),
+        });
+        setChildren(children.map((c) => (c.id === updated.id ? updated : c)));
+        setCalendarTarget((current) => ({ version: current.version + 1 }));
+      } else if (modal === "child") {
         const c = await post("/children", body);
         setChildren([...children, c]);
         setSelected(c.id);
@@ -507,6 +514,7 @@ export default function App() {
                 selected={selected}
                 onSelect={setSelected}
                 onAdd={() => open("child")}
+                onEdit={() => open("edit-child")}
                 subtitle={
                   child ? `${age(child.dob)} · Lahir ${date(child.dob)}` : ""
                 }
@@ -572,7 +580,15 @@ export default function App() {
                           fallback={<p className="empty">Memuat kurva WHO…</p>}
                         >
                           <GrowthChart
-                            key={child.id}
+                            key={
+                              child.id +
+                              "-" +
+                              child.dob +
+                              "-" +
+                              child.sex +
+                              "-" +
+                              child.name
+                            }
                             child={child}
                             records={measurements}
                             metric={metric}
@@ -759,6 +775,7 @@ export default function App() {
                 {
                   {
                     child: "Tambah profil anak",
+                    "edit-child": "Edit profil anak",
                     measurement: "Catat pengukuran",
                     journal: "Momen baru si kecil",
                     visit: "Catat kunjungan",
@@ -775,23 +792,38 @@ export default function App() {
               </button>
             </div>
             <form onSubmit={save}>
-              {modal === "child" ? (
+              {modal === "edit-child" && (
+                <p className="fine mb-4">
+                  Perubahan tanggal lahir memperbarui usia, kurva, dan target
+                  vaksin otomatis. Jadwal vaksin yang sudah dipindah secara
+                  manual serta riwayat selesai tetap dipertahankan.
+                </p>
+              )}
+              {modal === "child" || modal === "edit-child" ? (
                 <>
                   <Field
                     autoFocus
                     label="Nama panggilan"
                     name="name"
+                    defaultValue={modal === "edit-child" ? child.name : ""}
                     maxLength="80"
                   />
                   <Field
                     label="Tanggal lahir"
                     name="dob"
+                    defaultValue={modal === "edit-child" ? child.dob : ""}
+                    min="1900-01-01"
                     type="date"
                     max={today()}
                   />
                   <label className="field">
                     <span>Jenis kelamin</span>
-                    <Select name="sex">
+                    <Select
+                      name="sex"
+                      defaultValue={
+                        modal === "edit-child" ? child.sex : "female"
+                      }
+                    >
                       <option value="female">Perempuan</option>
                       <option value="male">Laki-laki</option>
                     </Select>

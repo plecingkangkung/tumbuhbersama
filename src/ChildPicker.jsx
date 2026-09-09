@@ -1,10 +1,11 @@
 import Select from "./Select";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 export default function ChildPicker({
   children,
   selected,
   onSelect,
   onAdd,
+  onEdit,
   subtitle,
 }) {
   const current = children.find((child) => child.id === selected);
@@ -31,10 +32,23 @@ export default function ChildPicker({
         </Select>
         {subtitle && <p className="child-subtitle">{subtitle}</p>}
       </div>
-      <button type="button" className="secondary child-add" onClick={onAdd}>
-        <Plus size={15} />
-        <span>Tambah anak</span>
-      </button>
+      <div className="child-profile-actions">
+        {current && (
+          <button
+            type="button"
+            className="secondary"
+            onClick={onEdit}
+            title="Ubah nama, tanggal lahir, dan jenis kelamin anak"
+          >
+            <Pencil size={15} />
+            <span>Edit profil</span>
+          </button>
+        )}
+        <button type="button" className="secondary child-add" onClick={onAdd}>
+          <Plus size={15} />
+          <span>Tambah anak</span>
+        </button>
+      </div>
     </section>
   );
 }
