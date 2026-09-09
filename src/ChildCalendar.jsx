@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -13,7 +13,8 @@ import {
 import Select from "./Select";
 import {
   isVaccineReference,
-  referencesInWeek,
+  referencesOnDate,
+  vaccinePlanningWindow,
   addDays,
   addMonths,
   jakartaDate,
@@ -357,11 +358,7 @@ export default function ChildCalendar({
   const dayEvents = visible.filter(
     (e) => !isVaccineReference(e) && e.due_date === selected,
   );
-  const selectedWeek = addDays(
-    selected,
-    -((new Date(selected + "T00:00:00Z").getUTCDay() + 6) % 7),
-  );
-  const weekReferences = referencesInWeek(visible, selectedWeek);
+  const dayReferences = referencesOnDate(visible, selected);
   const eventCard = (e) => (
     <article
       key={e.id}
@@ -386,8 +383,14 @@ export default function ChildCalendar({
         <h3>{e.title}</h3>
         {e.window_start && (
           <p className="fine">
-            Usia acuan {weekRange(child.dob, e.window_start, e.window_end)} ·{" "}
-            {dateLabel(e.window_start)}–{dateLabel(e.window_end)}
+            Usia acuan{" "}
+            {weekRange(
+              child.dob,
+              vaccinePlanningWindow(e).start,
+              vaccinePlanningWindow(e).end,
+            )}{" "}
+            · {dateLabel(vaccinePlanningWindow(e).start)}–
+            {dateLabel(vaccinePlanningWindow(e).end)}
           </p>
         )}
         {(e.doctor || e.location) && (
@@ -609,72 +612,56 @@ export default function ChildCalendar({
                 {d}
               </span>
             ))}
-            {Array.from({ length: 6 }, (_, week) => {
-              const start = addDays(gridStart, week * 7),
-                refs = referencesInWeek(visible, start);
+            {Array.from({ length: 42 }, (_, i) => {
+              const day = addDays(gridStart, i),
+                refs = referencesOnDate(visible, day),
+                items = visible.filter(
+                  (e) => !isVaccineReference(e) && e.due_date === day,
+                );
               return (
-                <Fragment key={start}>
-                  {Array.from({ length: 7 }, (_, i) => {
-                    const day = addDays(start, i),
-                      items = visible.filter(
-                        (e) => !isVaccineReference(e) && e.due_date === day,
-                      );
-                    return (
-                      <button
-                        key={day}
-                        className={`calendar-day ${day.slice(0, 7) !== month ? "outside" : ""} ${day === selected ? "selected" : ""} ${day === today ? "today" : ""}`}
-                        aria-label={
-                          dateLabel(day) + ", " + items.length + " janji"
-                        }
-                        aria-pressed={day === selected}
-                        onClick={() => {
-                          setSelected(day);
-                          setMonth(day.slice(0, 7));
-                        }}
-                      >
-                        <span>{Number(day.slice(-2))}</span>
-                        {items.length > 0 && (
-                          <small>{items.length} janji</small>
-                        )}
-                        <span className="calendar-dots">
-                          {items.some((e) => e.kind === "vaccine") && (
-                            <i className="vaccine" />
-                          )}
-                          {items.some((e) => e.kind === "doctor") && (
-                            <i className="doctor" />
-                          )}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <button
+                  type="button"
+                  key={day}
+                  className={`calendar-day ${day.slice(0, 7) !== month ? "outside" : ""} ${refs.length ? "vaccine-reference-day" : ""} ${day === selected ? "selected" : ""} ${day === today ? "today" : ""}`}
+                  aria-label={
+                    dateLabel(day) +
+                    ", " +
+                    items.length +
+                    " janji" +
+                    (refs.length
+                      ? ", acuan: " + refs.map((e) => e.title).join(", ")
+                      : "")
+                  }
+                  title={
+                    refs.length
+                      ? refs.map((e) => e.title).join(" · ")
+                      : undefined
+                  }
+                  aria-pressed={day === selected}
+                  onClick={() => {
+                    setSelected(day);
+                    setMonth(day.slice(0, 7));
+                  }}
+                >
+                  <span>{Number(day.slice(-2))}</span>
                   {refs.length > 0 && (
-                    <button
-                      type="button"
-                      className="vaccine-week-block"
-                      aria-label={
-                        "Lihat acuan vaksin minggu " + dateLabel(start)
-                      }
-                      onClick={() => setSelected(start < first ? first : start)}
-                    >
-                      <Syringe size={16} />
-                      <span>
-                        <strong>
-                          Acuan minggu {dateLabel(start)}–
-                          {dateLabel(addDays(start, 6))}
-                        </strong>
-                        <small>
-                          {refs
-                            .map((e) =>
-                              e.vaccine_key === "hb0"
-                                ? "HB 0 · khusus 24 jam pertama"
-                                : e.title,
-                            )
-                            .join(" · ")}
-                        </small>
-                      </span>
-                    </button>
+                    <small className="vaccine-date-label">
+                      <Syringe size={12} aria-hidden="true" />
+                      {refs.some((e) => e.vaccine_key === "hb0")
+                        ? "HB 0 · 24 jam"
+                        : "Acuan vaksin"}
+                    </small>
                   )}
-                </Fragment>
+                  {items.length > 0 && <small>{items.length} janji</small>}
+                  <span className="calendar-dots">
+                    {items.some((e) => e.kind === "vaccine") && (
+                      <i className="vaccine" />
+                    )}
+                    {items.some((e) => e.kind === "doctor") && (
+                      <i className="doctor" />
+                    )}
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -683,15 +670,16 @@ export default function ChildCalendar({
             <span>▰ Acuan minggu · bukan janji pasti</span>
             <span>● Janji dokter</span>
           </div>
-          {weekReferences.length > 0 && (
+          {dayReferences.length > 0 && (
             <div className="calendar-week-references">
-              <h3>Acuan vaksin minggu ini</h3>
+              <h3>Acuan vaksin pada tanggal yang dipilih</h3>
               <p className="fine">
-                Blok minggu menunjukkan periode perencanaan berdasarkan usia,
-                bukan jaminan rentang aman pemberian. Konfirmasikan tanggal
-                dengan faskes. HB 0 tetap dalam 24 jam pertama setelah lahir.
+                Tujuh tanggal berwarna adalah satu minggu perencanaan mulai
+                tanggal acuan usia, bukan jaminan rentang aman pemberian.
+                Konfirmasikan tanggal dengan faskes. HB 0 tetap dalam 24 jam
+                pertama setelah lahir.
               </p>
-              {weekReferences.map(eventCard)}
+              {dayReferences.map(eventCard)}
             </div>
           )}
           <h3 className="calendar-day-heading">Janji {dateLabel(selected)}</h3>
@@ -706,7 +694,8 @@ export default function ChildCalendar({
       ) : (
         <>
           <p className="calendar-guidance">
-            Acuan program rutin Kemenkes usia 0–18 bulan. Rentang minggu adalah
+            Acuan program rutin Kemenkes usia 0–18 bulan. Sorotan kalender
+            dibatasi satu minggu mulai target usia. Rentang minggu adalah
             konversi periode bulan anjuran berdasarkan tanggal lahir, bukan
             batas aman pemberian atau janji yang sudah dipesan. HB 0: 24 jam
             pertama setelah lahir.

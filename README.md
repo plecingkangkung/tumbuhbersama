@@ -303,3 +303,7 @@ Acuan vaksin otomatis kini tampil sebagai pita mingguan di kalender, bukan janji
 Kolom `is_scheduled` membedakan acuan dari janji pasti, termasuk bila tanggal janji kebetulan sama dengan awal periode acuan. Acuan tidak masuk hitungan janji harian, jadwal terlambat, pengingat H-n/hari H, atau ekspor ICS. Janji pasti dan catatan selesai tetap tersimpan. Perubahan tanggal lahir hanya menggeser acuan otomatis yang belum dijadwalkan.
 
 Database lama perlu migrasi `server/migrations/009_vaccine_reference_weeks.sql` sekali (sudah diterapkan pada Laragon lokal). Migrasi mempertahankan jadwal yang tanggalnya sudah diubah, memiliki jam/dokter/lokasi, atau selesai; jadwal lama yang tidak dapat dibedakan dari acuan bisa dikonfirmasi kembali lewat Tentukan tanggal. Pengingat lama untuk acuan yang belum dijadwalkan dibersihkan.
+
+### Koreksi tampilan acuan vaksin
+
+Kalender menyorot kotak tanggal langsung selama satu rentang tujuh hari: mulai `window_start` (tanggal lahir ditambah target usia vaksin) hingga enam hari sesudahnya. Tidak ada pita berulang per minggu kalender dan tidak menyorot seluruh periode bulan. Contoh target 10 Desember menghasilkan sorotan 10–16 Desember, termasuk bila rentang melewati pergantian bulan/tahun. Klik tanggal berwarna menampilkan vaksin yang bertepatan dengan tanggal itu. HB 0 tetap memakai periode khusus 24 jam pertama, bukan tujuh hari. Ini rentang perencanaan UI, bukan batas aman pemberian vaksin. Tidak memerlukan migrasi tambahan.

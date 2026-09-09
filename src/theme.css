@@ -697,40 +697,38 @@ button:not(:disabled):active {
     gap: 6px;
   }
 }
-.vaccine-week-block {
-  grid-column: 1 / -1;
-  justify-content: flex-start;
-  align-items: flex-start;
-  text-align: left;
-  background: #f3e7f9;
-  border: 1px solid #d8bee7;
-  color: #694585;
-  border-radius: 10px;
-  padding: 9px 12px;
-  margin: -1px 0 7px;
-}
-.vaccine-week-block > svg {
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.vaccine-week-block strong,
-.vaccine-week-block small {
-  display: block;
-  line-height: 1.5;
-}
-.vaccine-week-block strong {
-  font-size: 0.8rem;
-}
-.vaccine-week-block small {
-  font-size: 0.75rem;
-  font-weight: 400;
-}
-.vaccine-week-block:hover {
-  background: #ead9f4;
-}
 .calendar-week-references {
   margin: 18px 0;
 }
 .calendar-week-references > .fine {
   margin: 7px 0 12px;
+}
+
+.calendar-day.vaccine-reference-day {
+  background: #f0e1f7;
+  border-color: #ceaddf;
+  color: #694585;
+}
+.calendar-day.vaccine-reference-day:hover {
+  background: #e8d3f2;
+}
+.calendar-day.vaccine-reference-day.selected {
+  background: #e6cff1;
+  box-shadow: inset 0 0 0 2px #9365b1;
+}
+.calendar-day .vaccine-date-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #704a88;
+  line-height: 1.35;
+  text-align: left;
+}
+@media (max-width: 520px) {
+  .calendar-day .vaccine-date-label {
+    font-size: 9px;
+  }
+  .vaccine-date-label svg {
+    display: none;
+  }
 }

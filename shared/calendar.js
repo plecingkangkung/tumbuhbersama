@@ -164,10 +164,20 @@ export const isVaccineReference = (event) =>
   Boolean(event.vaccine_key) &&
   !Number(event.is_scheduled) &&
   event.status === "planned";
-export function referencesInWeek(events, start) {
-  const end = addDays(start, 6);
-  return events.filter(
-    (e) =>
-      isVaccineReference(e) && e.window_start <= end && e.window_end >= start,
-  );
+// One planning week starts on the age-based target, independent of weekday.
+// HB 0 retains its shorter birth/24-hour reference instead of a seven-day span.
+export function vaccinePlanningWindow(event) {
+  const start = event.window_start;
+  const end = addDays(start, event.vaccine_key === "hb0" ? 1 : 6);
+  return {
+    start,
+    end: event.window_end && event.window_end < end ? event.window_end : end,
+  };
+}
+export function referencesOnDate(events, day) {
+  return events.filter((event) => {
+    if (!isVaccineReference(event)) return false;
+    const { start, end } = vaccinePlanningWindow(event);
+    return day >= start && day <= end;
+  });
 }

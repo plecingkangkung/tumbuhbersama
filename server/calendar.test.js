@@ -14,7 +14,8 @@ import {
   jakartaDate,
   calendarICS,
   isVaccineReference,
-  referencesInWeek,
+  referencesOnDate,
+  vaccinePlanningWindow,
 } from "../shared/calendar.js";
 
 test("vaccine calendar month boundaries, optional doses and week conversion", () => {
@@ -344,13 +345,32 @@ test("reference weeks overlap month boundaries without becoming dated appointmen
     reminder_days: 7,
   };
   assert.ok(isVaccineReference(ref));
-  assert.equal(referencesInWeek([ref], "2026-01-26").length, 1);
-  assert.equal(referencesInWeek([ref], "2026-02-23").length, 1);
-  assert.equal(referencesInWeek([ref], "2026-03-02").length, 0);
+  assert.deepEqual(vaccinePlanningWindow(ref), {
+    start: "2026-01-31",
+    end: "2026-02-06",
+  });
+  for (let i = 0; i < 7; i++)
+    assert.equal(referencesOnDate([ref], addDays("2026-01-31", i)).length, 1);
+  assert.equal(referencesOnDate([ref], "2026-02-07").length, 0);
+  assert.deepEqual(vaccinePlanningWindow({ ...ref, vaccine_key: "hb0" }), {
+    start: "2026-01-31",
+    end: "2026-02-01",
+  });
+  assert.deepEqual(
+    vaccinePlanningWindow({
+      ...ref,
+      window_start: "2024-02-27",
+      window_end: "2024-03-26",
+    }),
+    { start: "2024-02-27", end: "2024-03-04" },
+  );
+  assert.equal(referencesOnDate([ref], "2026-01-26").length, 0);
+  assert.equal(referencesOnDate([ref], "2026-02-23").length, 0);
+  assert.equal(referencesOnDate([ref], "2026-03-02").length, 0);
   assert.equal(reminderPhase(ref, new Date("2026-01-31T05:00:00Z")), null);
   assert.ok(!calendarICS([ref], { name: "Anak" }).includes("BEGIN:VEVENT"));
   const fixed = { ...ref, is_scheduled: 1 };
-  assert.equal(referencesInWeek([fixed], "2026-01-26").length, 0);
+  assert.equal(referencesOnDate([fixed], "2026-01-26").length, 0);
   assert.equal(reminderPhase(fixed, new Date("2026-01-31T05:00:00Z")), "today");
   assert.ok(calendarICS([fixed], { name: "Anak" }).includes("BEGIN:VEVENT"));
 });
