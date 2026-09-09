@@ -1,3 +1,4 @@
+import { childCalendar } from "./calendar.js";
 import { milestoneRouter } from "./milestones.js";
 import { authCaptcha } from "./captcha.js";
 import { createServer } from "node:http";
@@ -128,6 +129,15 @@ async function resolveSession(req) {
 const notifyUser = async (id) => {
   if (realtime) await realtime.notifyUser(id);
 };
+const calendar = childCalendar({
+  query,
+  transaction,
+  demo,
+  owned,
+  validDate,
+  notifyUser,
+  getDemoVisits: () => [...records.values()],
+});
 async function dropSession(req) {
   const token = tokenFrom(req);
   if (!token) return;
@@ -139,6 +149,7 @@ async function dropSession(req) {
         if (c.user_id === previous.user.id) {
           children.delete(id);
           milestones.clear(id);
+          calendar.clear(id);
           for (const [rid, r] of records)
             if (r.child_id === id) records.delete(rid);
         }
@@ -331,7 +342,15 @@ app.use("/api", (req, res, next) =>
     ? next()
     : res.status(401).json({ error: "Silakan masuk terlebih dahulu." }),
 );
-app.use("/api/notifications", notificationRouter({ query, demo, notifyUser }));
+app.use(
+  "/api/notifications",
+  notificationRouter({
+    query,
+    demo,
+    notifyUser,
+    refreshReminders: calendar.sweep,
+  }),
+);
 app.use("/api/forum", forumRouter({ query, transaction, demo, notifyUser }));
 app.get("/api/articles", (req, res) => res.json(articleSummaries));
 app.get("/api/articles/:slug", (req, res) => {
@@ -394,6 +413,7 @@ app.put("/api/children/:id/records/:recordId/position", async (req, res) => {
     );
   res.json({ ...row, height_position: position });
 });
+app.use("/api/children/:id/calendar", calendar.router);
 app.get("/api/children/:id/records", async (req, res) => {
   await owned(req.params.id, req.user);
   res.json(
@@ -508,6 +528,19 @@ export function createAppServer() {
     resolveSession,
     origin: process.env.APP_ORIGIN || "http://127.0.0.1:5173",
   });
+  let interval;
+  server.once("listening", () => {
+    const sweep = () =>
+      calendar
+        .sweep()
+        .catch((e) =>
+          console.error("Calendar reminders:", e.code || e.message),
+        );
+    sweep();
+    interval = setInterval(sweep, 60000);
+    interval.unref();
+  });
+  server.once("close", () => clearInterval(interval));
   return { server, realtime };
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -522,5 +555,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   );
 }
 export async function closeDatabase() {
+  await calendar.drain();
   if (db) await db.end();
 }

@@ -1,3 +1,4 @@
+import ChildCalendar from "./ChildCalendar";
 import Select from "./Select";
 import Milestones from "./Milestones";
 import Captcha from "./Captcha";
@@ -71,6 +72,7 @@ function age(dob) {
     : `${Math.floor(m / 12) ? Math.floor(m / 12) + " tahun " : ""}${m % 12} bulan`;
 }
 export default function App() {
+  const [calendarTarget, setCalendarTarget] = useState({ version: 0 });
   const [captchaVersion, setCaptchaVersion] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -131,9 +133,6 @@ export default function App() {
     journal = records
       .filter((r) => r.kind === "journal" && r.child_id === selected)
       .sort((a, b) => b.date.localeCompare(a.date)),
-    visits = records
-      .filter((r) => r.kind === "visit" && r.child_id === selected)
-      .sort((a, b) => a.date.localeCompare(b.date)),
     latest = measurements.at(-1);
   async function auth(e, demo = false) {
     e?.preventDefault();
@@ -298,7 +297,7 @@ export default function App() {
             ["Pertumbuhan", TrendingUp],
             ["Jurnal perkembangan", BookHeart],
             ["Milestone", ListChecks],
-            ["Kunjungan", CalendarDays],
+            ["Kalender", CalendarDays],
             ["Artikel", BookOpen],
             ["Forum", MessagesSquare],
           ].map(([name, Icon]) => (
@@ -308,6 +307,10 @@ export default function App() {
               aria-current={tab === name ? "page" : undefined}
               onClick={() => {
                 setTab(name);
+                if (name === "Kalender")
+                  setCalendarTarget((current) => ({
+                    version: current.version + 1,
+                  }));
                 closeMenu();
                 if (name === "Forum")
                   setForumTarget((current) => ({
@@ -366,6 +369,14 @@ export default function App() {
           <div className="flex items-center gap-3">
             <Notifications
               key={user.id}
+              onCalendar={(item) => {
+                setSelected(item.child_id);
+                setCalendarTarget((current) => ({
+                  ...item,
+                  version: current.version + 1,
+                }));
+                setTab("Kalender");
+              }}
               onOpen={(id) => {
                 setForumTarget((current) => ({
                   id,
@@ -566,6 +577,13 @@ export default function App() {
                       </section>
                     </>
                   )}
+                  {tab === "Kalender" && (
+                    <ChildCalendar
+                      key={child.id + "-" + calendarTarget.version}
+                      child={child}
+                      target={calendarTarget}
+                    />
+                  )}
                   {tab === "Milestone" && (
                     <Milestones key={child.id} child={child} />
                   )}
@@ -646,52 +664,18 @@ export default function App() {
                         )}
                       </section>
                     )}
-                    {(tab === "Ringkasan" || tab === "Kunjungan") && (
-                      <section className="card visits">
-                        <div className="section-heading">
-                          <div>
-                            <span className="eyebrow">AGENDA SI KECIL</span>
-                            <h2>Kunjungan</h2>
-                          </div>
-                          <button
-                            className="icon-button"
-                            aria-label="Tambah kunjungan"
-                            onClick={() => open("visit")}
-                          >
-                            <Plus size={20} />
-                          </button>
-                        </div>
-                        {!visits.length ? (
-                          <p className="empty">
-                            Catat jadwal posyandu atau kunjungan dokter
-                            berikutnya.
-                          </p>
-                        ) : (
-                          (tab === "Ringkasan"
-                            ? visits
-                                .filter((v) => v.date >= today())
-                                .slice(0, 2)
-                            : visits
-                          ).map((r) => (
-                            <article className="visit-item" key={r.id}>
-                              <CalendarDays size={23} />
-                              <div>
-                                <span className="fine">{date(r.date)}</span>
-                                <h3>{r.title}</h3>
-                                <p className="muted text-sm">{r.notes}</p>
-                              </div>
-                            </article>
-                          ))
-                        )}
-                        {tab === "Ringkasan" &&
-                          visits.length > 0 &&
-                          !visits.some((v) => v.date >= today()) && (
-                            <p className="empty">Belum ada jadwal mendatang.</p>
-                          )}
-                        <p className="fine mt-5">
-                          Catatan jadwal pribadi, tanpa pengingat otomatis.
-                        </p>
-                      </section>
+                    {tab === "Ringkasan" && (
+                      <ChildCalendar
+                        key={child.id}
+                        child={child}
+                        compact
+                        onOpen={() => {
+                          setCalendarTarget((current) => ({
+                            version: current.version + 1,
+                          }));
+                          setTab("Kalender");
+                        }}
+                      />
                     )}
                   </div>
                 </>

@@ -2,6 +2,7 @@ import { io } from "socket.io-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
+  CalendarDays,
   Heart,
   MessageCircle,
   CheckCheck,
@@ -24,7 +25,7 @@ async function api(path = "", options = {}) {
     throw new Error(data.error || "Notifikasi belum dapat dimuat.");
   return data;
 }
-export default function Notifications({ onOpen }) {
+export default function Notifications({ onOpen, onCalendar }) {
   const [data, setData] = useState({
       items: [],
       unread: 0,
@@ -111,7 +112,8 @@ export default function Notifications({ onOpen }) {
         ),
       }));
       menu.current.open = false;
-      onOpen(item.topic_id);
+      if (item.kind === "calendar") onCalendar?.(item);
+      else onOpen(item.topic_id);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -196,7 +198,9 @@ export default function Notifications({ onOpen }) {
                 onClick={() => read(item)}
               >
                 <span className={"notification-icon " + item.kind}>
-                  {item.kind === "like" ? (
+                  {item.kind === "calendar" ? (
+                    <CalendarDays size={17} />
+                  ) : item.kind === "like" ? (
                     <Heart size={17} />
                   ) : (
                     <MessageCircle size={17} />
@@ -205,10 +209,24 @@ export default function Notifications({ onOpen }) {
                 <span className="notification-copy">
                   <span>
                     <strong>{item.actor_name}</strong>{" "}
-                    {item.kind === "like" ? "menyukai" : "membalas"}{" "}
-                    {item.kind === "reply" ? "komentarmu" : "diskusimu"}
+                    {item.kind === "calendar" ? (
+                      item.phase === "today" ? (
+                        "· jadwal hari ini"
+                      ) : (
+                        "· jadwal mendekat"
+                      )
+                    ) : (
+                      <>
+                        {item.kind === "like" ? "menyukai" : "membalas"}{" "}
+                        {item.kind === "reply" ? "komentarmu" : "diskusimu"}
+                      </>
+                    )}
                   </span>
-                  <span className="notification-title">{item.topic_title}</span>
+                  <span className="notification-title">
+                    {item.topic_title}
+                    {item.kind === "calendar" &&
+                      ` · ${item.due_date}${item.due_time ? " " + item.due_time.slice(0, 5) + " WIB" : ""}`}
+                  </span>
                   <span className="notification-date">
                     {timestamp(item.created_at)}
                     {!item.read_at ? " · Belum dibaca" : ""}
@@ -224,7 +242,7 @@ export default function Notifications({ onOpen }) {
               <div className="notification-empty">
                 <Bell size={25} />
                 <strong>Belum ada notifikasi</strong>
-                <p>Balasan dan like dari mom lainnya akan muncul di sini.</p>
+                <p>Pengingat jadwal, balasan, dan like akan muncul di sini.</p>
               </div>
             )
           )}
