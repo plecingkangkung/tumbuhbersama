@@ -174,7 +174,12 @@ function TopicList({ open, refresh }) {
                   <div className="forum-topic-main">
                     <span className="forum-category">{t.category}</span>
                     <h2>
-                      <button onClick={() => open(t.id)}>{t.title}</button>
+                      <button
+                        className="forum-topic-link"
+                        onClick={() => open(t.id)}
+                      >
+                        {t.title}
+                      </button>
                     </h2>
                     <p className="muted forum-excerpt">{t.excerpt}</p>
                     <Author name={t.author_name} date={t.created_at} />

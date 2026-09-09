@@ -1240,3 +1240,28 @@ th {
     padding: 20px;
   }
 }
+/* Stretch the native title button across the card, keeping one keyboard target. */
+.forum-topic {
+  position: relative;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.forum-topic-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 13px;
+}
+.forum-topic:hover {
+  border-color: #82b9aa;
+  box-shadow: 0 4px 16px #1736320d;
+}
+.forum-topic:focus-within {
+  outline: 3px solid #3a9bce;
+  outline-offset: 3px;
+}
+.forum-topic-link:focus-visible {
+  outline: none;
+}
