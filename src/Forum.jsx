@@ -1,3 +1,4 @@
+import Select from "./Select";
 import { MediaGallery, MediaPicker } from "./ForumMedia";
 import { threadComments } from "./forumThreads";
 import { useEffect, useRef, useState } from "react";
@@ -189,7 +190,7 @@ function TopicList({ open, refresh }) {
             Cari
           </button>
         </form>
-        <select
+        <Select
           aria-label="Kategori diskusi"
           value={category}
           onChange={(e) => {
@@ -202,7 +203,7 @@ function TopicList({ open, refresh }) {
           {categories.map((c) => (
             <option key={c}>{c}</option>
           ))}
-        </select>
+        </Select>
         <button
           className="secondary"
           aria-label="Muat ulang diskusi"
@@ -354,11 +355,11 @@ function NewTopic({ onCreated, onCancel }) {
         </label>
         <label className="field">
           <span>Kategori</span>
-          <select name="category">
+          <Select name="category">
             {categories.map((c) => (
               <option key={c}>{c}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="field">
           <span>Cerita atau pertanyaan</span>

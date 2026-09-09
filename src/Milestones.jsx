@@ -1,3 +1,4 @@
+import Select from "./Select";
 import { useEffect, useState, useRef } from "react";
 import {
   milestoneStages,
@@ -93,7 +94,8 @@ export default function Milestones({ child }) {
       <div className="milestone-controls">
         <label>
           Tahap usia{" "}
-          <select
+          <Select
+            aria-label="Tahap usia milestone"
             value={month}
             onChange={(e) => {
               setMonth(Number(e.target.value));
@@ -106,7 +108,7 @@ export default function Milestones({ child }) {
                 {s.month === stageForAge(months) ? " · sesuai usia" : ""}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           Tanggal pengamatan untuk centang baru{" "}

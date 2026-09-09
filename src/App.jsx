@@ -1,3 +1,4 @@
+import Select from "./Select";
 import Milestones from "./Milestones";
 import Captcha from "./Captcha";
 import BrandMark from "./BrandMark";
@@ -520,7 +521,7 @@ export default function App() {
                               Pantau pengukuran si kecil bersama persentil WHO.
                             </p>
                           </div>
-                          <select
+                          <Select
                             aria-label="Jenis pengukuran grafik"
                             value={metric}
                             onChange={(e) => setMetric(e.target.value)}
@@ -530,7 +531,7 @@ export default function App() {
                               Panjang / tinggi (cm)
                             </option>
                             <option value="head">Lingkar kepala (cm)</option>
-                          </select>
+                          </Select>
                         </div>
                         <Suspense
                           fallback={<p className="empty">Memuat kurva WHO…</p>}
@@ -773,10 +774,10 @@ export default function App() {
                   />
                   <label className="field">
                     <span>Jenis kelamin</span>
-                    <select name="sex">
+                    <Select name="sex">
                       <option value="female">Perempuan</option>
                       <option value="male">Laki-laki</option>
-                    </select>
+                    </Select>
                   </label>
                 </>
               ) : (
@@ -810,7 +811,7 @@ export default function App() {
                       />
                       <label className="field">
                         <span>Posisi pengukuran panjang / tinggi</span>
-                        <select name="height_position" required defaultValue="">
+                        <Select name="height_position" required defaultValue="">
                           <option value="" disabled>
                             Pilih posisi saat diukur
                           </option>
@@ -820,7 +821,7 @@ export default function App() {
                           <option value="standing">
                             Berdiri (tinggi badan)
                           </option>
-                        </select>
+                        </Select>
                       </label>
                       <Field
                         label="Lingkar kepala (cm)"
@@ -845,7 +846,7 @@ export default function App() {
                       {modal === "journal" && (
                         <label className="field">
                           <span>Kategori catatan</span>
-                          <select name="category">
+                          <Select name="category">
                             {[
                               "Gerak tubuh",
                               "Komunikasi",
@@ -855,7 +856,7 @@ export default function App() {
                             ].map((c) => (
                               <option key={c}>{c}</option>
                             ))}
-                          </select>
+                          </Select>
                         </label>
                       )}
                       <label className="field">

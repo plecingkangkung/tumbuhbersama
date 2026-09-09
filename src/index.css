@@ -2330,3 +2330,178 @@ th {
     font-size: 11px;
   }
 }
+
+.app-select {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  min-width: 0;
+  max-width: 100%;
+}
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 40px;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid #d6e3de;
+  border-radius: 9px;
+  background: #fff;
+  color: #253e43;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: 0 1px 2px #173f3505;
+}
+.select-trigger > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.select-trigger > svg {
+  flex-shrink: 0;
+  color: #668278;
+  transition: transform 0.15s;
+}
+.select-trigger:hover:not(:disabled) {
+  border-color: #98b9ac;
+  background: #fafcfb;
+}
+.select-trigger[aria-expanded="true"] {
+  border-color: #137e6e;
+  box-shadow: 0 0 0 3px #137e6e14;
+}
+.select-trigger[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.select-trigger:focus-visible {
+  outline: 2px solid #137e6e;
+  outline-offset: 2px;
+}
+.select-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f3f6f5;
+}
+.select-trigger.is-invalid {
+  border-color: #b65353;
+}
+.select-options {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 5px;
+  border: 1px solid #dce7e2;
+  border-radius: 11px;
+  background: white;
+  color: #253e43;
+  box-shadow: 0 10px 32px #214b3926;
+  overflow: auto;
+  overscroll-behavior: contain;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  min-height: 38px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.select-option > span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.select-option > svg {
+  flex-shrink: 0;
+}
+.select-option:hover:not(.is-disabled),
+.select-option.is-active:not(.is-disabled) {
+  background: #eff6f2;
+}
+.select-option.is-selected {
+  color: #126d61;
+  font-weight: 600;
+  background: #e7f4ed;
+}
+.select-option.is-disabled {
+  color: #95a29c;
+  cursor: default;
+}
+.select-empty,
+.select-error {
+  display: block;
+  font-size: 12px;
+  padding: 8px;
+}
+.select-error {
+  color: #a74848;
+  padding: 5px 0 0;
+}
+.select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.field > .app-select {
+  width: 100%;
+}
+.section-heading > .app-select {
+  min-width: 180px;
+}
+.growth-toolbar .app-select {
+  min-width: 135px;
+}
+.percentile-detail .app-select {
+  min-width: 190px;
+}
+.milestone-controls .app-select {
+  min-width: 180px;
+}
+.forum-controls > .app-select {
+  min-width: 190px;
+}
+.profile-select {
+  width: 190px;
+  max-width: 100%;
+  margin: 4px 0;
+}
+.profile-select .select-trigger {
+  font-weight: 600;
+}
+@media (max-width: 760px) {
+  .select-trigger {
+    min-height: 42px;
+  }
+  .select-option {
+    min-height: 42px;
+  }
+  .section-heading > .app-select {
+    min-width: 0;
+  }
+  .forum-controls > .app-select {
+    flex: 1;
+    min-width: 0;
+  }
+  .profile-select {
+    width: 165px;
+  }
+}

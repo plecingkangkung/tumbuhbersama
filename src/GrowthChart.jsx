@@ -1,3 +1,4 @@
+import Select from "./Select";
 import { useState } from "react";
 import {
   assessMeasurement,
@@ -94,7 +95,8 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
         </span>
         <label>
           Rentang{" "}
-          <select
+          <Select
+            aria-label="Rentang usia grafik"
             value={range}
             onChange={(e) => setRange(Number(e.target.value))}
           >
@@ -102,7 +104,7 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
             <option value={6}>0–6 bulan</option>
             <option value={24}>0–24 bulan</option>
             <option value={60}>0–60 bulan</option>
-          </select>
+          </Select>
         </label>
       </div>
       <div
@@ -244,7 +246,7 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
         <div className="percentile-detail" aria-live="polite">
           <label>
             Pengukuran{" "}
-            <select
+            <Select
               aria-label="Tanggal pengukuran persentil"
               value={current.record.id}
               onChange={(e) => setChosen(e.target.value)}
@@ -254,7 +256,7 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
                   {p.record.date} · {p.day} hari
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           {current.available ? (
             <>
@@ -273,7 +275,8 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
           {metric === "height" && (
             <label className="growth-position">
               Posisi saat diukur{" "}
-              <select
+              <Select
+                aria-label="Posisi saat diukur"
                 disabled={busy}
                 value={current.record.height_position || ""}
                 onChange={async (e) => {
@@ -293,7 +296,7 @@ export default function GrowthChart({ child, records, metric, onPosition }) {
                 </option>
                 <option value="recumbent">Telentang (panjang)</option>
                 <option value="standing">Berdiri (tinggi)</option>
-              </select>
+              </Select>
             </label>
           )}
           {metric === "height" && current.assumed && (
