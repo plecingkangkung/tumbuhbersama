@@ -1,6 +1,20 @@
 import { Router } from "express";
-export function notificationRouter({ query, demo }) {
+export function notificationRouter({
+  query,
+  demo,
+  notifyUser = async () => {},
+}) {
   const router = Router();
+  router.use((req, res, next) => {
+    if (req.method === "PUT")
+      res.on("finish", () => {
+        if (res.statusCode < 400)
+          notifyUser(req.user.id).catch(() =>
+            console.error("Notification sync failed."),
+          );
+      });
+    next();
+  });
   router.get("/", async (req, res) => {
     const page = Number(req.query.page || 1);
     if (!Number.isInteger(page) || page < 1 || page > 10000)

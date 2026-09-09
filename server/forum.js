@@ -22,7 +22,7 @@ const pageNumber = (v) => {
   return Number(v);
 };
 // Only public display names are selected. Emails and child records never enter forum responses.
-export function forumRouter({ query, demo }) {
+export function forumRouter({ query, demo, notifyUser = async () => {} }) {
   const router = Router();
   router.use((req, res, next) =>
     demo
@@ -32,6 +32,22 @@ export function forumRouter({ query, demo }) {
         })
       : next(),
   );
+  router.use("/:id", async (req, res, next) => {
+    if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+    const owner = (
+      await query("SELECT user_id FROM forum_topics WHERE id=?", [
+        req.params.id,
+      ])
+    )[0];
+    if (owner)
+      res.on("finish", () => {
+        if (res.statusCode < 400)
+          notifyUser(owner.user_id).catch(() =>
+            console.error("Notification delivery failed."),
+          );
+      });
+    next();
+  });
   const writeLimit = rateLimit({
     windowMs: 60000,
     limit: 15,

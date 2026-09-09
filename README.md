@@ -194,7 +194,7 @@ Untuk database lama, jalankan `server/migrations/002_forum_likes.sql` setelah mi
 
 ## Notifikasi dalam aplikasi
 
-Ikon lonceng pada header menampilkan balasan dan like dari pengguna lain pada diskusi milik akun yang sedang login. Aktivitas sendiri tidak membuat notifikasi. Notifikasi menampilkan nama pelaku dan judul topik; mengekliknya menandai dibaca dan membuka diskusi tersebut. Tersedia tandai semua dibaca, jumlah belum dibaca, serta pagination 20 notifikasi. Pembaruan dilakukan setiap 30 detik ketika halaman terlihat, saat jendela kembali aktif, atau saat panel dibuka. Ini notifikasi dalam aplikasi, bukan push browser, email, atau WhatsApp.
+Ikon lonceng pada header menampilkan balasan dan like dari pengguna lain pada diskusi milik akun yang sedang login. Aktivitas sendiri tidak membuat notifikasi. Notifikasi menampilkan nama pelaku dan judul topik; mengekliknya menandai dibaca dan membuka diskusi tersebut. Tersedia tandai semua dibaca, jumlah belum dibaca, serta pagination 20 notifikasi. Pembaruan dikirim langsung melalui WebSocket. Saat koneksi terputus, polling setiap 30 detik digunakan sebagai cadangan ketika halaman terlihat. Daftar juga dimuat ulang saat tersambung kembali, jendela kembali aktif, atau panel dibuka. Ini notifikasi dalam aplikasi, bukan push browser, email, atau WhatsApp.
 
 Migrasi `server/migrations/003_notifications.sql` menambahkan tabel `notifications` dan tiga trigger MySQL. Trigger membuat notifikasi dalam transaksi yang sama dengan komentar/like, tidak memicu notifikasi ganda untuk like yang sudah ada, dan menghapus notifikasi saat like dibatalkan. Foreign key menghapus notifikasi jika topik, komentar, atau akun terkait dihapus. Migrasi sudah diterapkan pada Laragon MySQL 8.0.30; untuk instalasi lain jalankan dengan akun yang memiliki izin CREATE TABLE dan TRIGGER. `server/schema.sql` mencakup instalasi baru. Notifikasi dibuat untuk aktivitas setelah migrasi, tanpa mengisi ulang aktivitas lama.
 
@@ -203,3 +203,15 @@ Migrasi `server/migrations/003_notifications.sql` menambahkan tabel `notificatio
 - `PUT /api/notifications/read-all`: tandai semua notifikasi milik sendiri dibaca.
 
 Semua endpoint memerlukan sesi. ID notifikasi akun lain menghasilkan 404 pada operasi baca. Mode demo menampilkan daftar kosong. Pengujian dua akun meliputi penerima yang benar, tidak ada notifikasi aktivitas sendiri, deduplikasi like, privasi, status baca, tandai semua dibaca, dan penghapusan bersama topik. Tes juga dijalankan melalui server lokal aktif.
+
+### WebSocket notifikasi
+
+Socket.IO memakai transport WebSocket pada `/socket.io`, di server HTTP yang sama dengan API. Vite meneruskan koneksi dengan `ws: true`. Handshake memeriksa Origin terhadap `APP_ORIGIN` dan cookie sesi HttpOnly; server menentukan ruang akun, bukan ID yang dikirim client. Koneksi diputus saat sesi habis atau logout; sesi diperiksa kembali sebelum mengirim event. Tidak ada nama, isi, atau token dalam event `notifications:changed`: client mengambil data melalui endpoint API yang tetap memeriksa sesi.
+
+Setelah perubahan forum berhasil disimpan, server memberi sinyal ke pemilik diskusi. Tanda dibaca disinkronkan ke semua koneksi akun yang sama. Database tetap menjadi sumber data sehingga notifikasi saat offline muncul ketika koneksi kembali. Polling hanya cadangan saat WebSocket tidak terhubung. Panel menampilkan status koneksi.
+
+Untuk deployment, reverse proxy harus meneruskan HTTP Upgrade pada `/socket.io/`, menggunakan WSS/HTTPS, dan mempertahankan Origin aplikasi yang benar. Implementasi saat ini untuk satu proses Node.js. Deployment beberapa proses/instance memerlukan adapter pub/sub, misalnya Redis, agar event lintas instance tersampaikan. Perubahan langsung ke database di luar API tidak memicu event WebSocket; data tetap terlihat saat panel dimuat ulang.
+
+`server/realtime.test.js` mencakup pengiriman lewat WebSocket, isolasi tiga akun, dua tab, penolakan koneksi tanpa sesi/origin asing, sinkronisasi dibaca, koneksi ulang, batal like, dan logout. Aktifkan `TEST_MYSQL=true`; `TEST_LIVE_SOCKET=true` menjalankan tes ini melalui server lokal port 5173. Akun uji dihapus setelah selesai.
+
+Referensi implementasi: [middleware autentikasi Socket.IO](https://socket.io/docs/v4/middlewares/), [rooms](https://socket.io/docs/v4/rooms/), dan [opsi client](https://socket.io/docs/v4/client-options/).

@@ -1,3 +1,4 @@
+import { io } from "socket.io-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Bell,
@@ -34,7 +35,8 @@ export default function Notifications({ onOpen }) {
     [error, setError] = useState(""),
     [page, setPage] = useState(1),
     [busy, setBusy] = useState(false),
-    [loading, setLoading] = useState(true);
+    [loading, setLoading] = useState(true),
+    [connection, setConnection] = useState("connecting");
   const menu = useRef(null),
     request = useRef(null);
   const refresh = useCallback(async () => {
@@ -54,15 +56,43 @@ export default function Notifications({ onOpen }) {
   }, [page]);
   useEffect(() => {
     const initialLoad = setTimeout(refresh, 0);
+    const socket = io({
+      transports: ["websocket"],
+      withCredentials: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+    });
     const update = () => {
       if (!document.hidden) refresh();
     };
-    const interval = setInterval(update, 30000);
+    socket.on("connect", () => {
+      setConnection("connected");
+      refresh();
+    });
+    socket.on("notifications:changed", refresh);
+    socket.on("disconnect", () =>
+      setConnection((current) =>
+        current === "expired" ? current : "disconnected",
+      ),
+    );
+    socket.on("connect_error", () => setConnection("disconnected"));
+    socket.on("session:ended", () => {
+      setConnection("expired");
+      socket.disconnect();
+      setData({ items: [], unread: 0, total: 0, page: 1, pageSize: 20 });
+      setError("Sesi login berakhir. Silakan masuk kembali.");
+    });
+    const fallback = setInterval(() => {
+      if (!socket.connected) update();
+    }, 30000);
     window.addEventListener("focus", update);
     return () => {
       clearTimeout(initialLoad);
-      clearInterval(interval);
+      clearInterval(fallback);
       window.removeEventListener("focus", update);
+      socket.removeAllListeners();
+      socket.disconnect();
       request.current?.abort();
     };
   }, [refresh]);
@@ -224,7 +254,11 @@ export default function Notifications({ onOpen }) {
           </div>
         )}
         <p className="notification-footnote">
-          Diperbarui otomatis setiap 30 detik.
+          {connection === "connected"
+            ? "Terhubung · Notifikasi langsung diperbarui"
+            : connection === "expired"
+              ? "Sesi berakhir · Silakan masuk kembali"
+              : "Menghubungkan ulang · Pembaruan cadangan setiap 30 detik"}
         </p>
       </div>
     </details>

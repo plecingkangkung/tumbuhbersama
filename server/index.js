@@ -1,3 +1,5 @@
+import { createServer } from "node:http";
+import { attachRealtime } from "./realtime.js";
 import { notificationRouter } from "./notifications.js";
 import { forumRouter } from "./forum.js";
 import { articles, articleSummaries } from "./articles.js";
@@ -86,9 +88,32 @@ function tokenFrom(req) {
     .find((c) => c.startsWith("tb_session="))
     ?.slice(11);
 }
+let realtime;
+async function resolveSession(req) {
+  const token = tokenFrom(req);
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
+  const key = hash(token);
+  if (demo) {
+    const session = sessions.get(key);
+    return session && session.expires > Date.now() ? { ...session, key } : null;
+  }
+  const row = (
+    await query(
+      "SELECT u.id,u.name,u.email,UNIX_TIMESTAMP(s.expires_at)*1000 AS expires FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>NOW()",
+      [key],
+    )
+  )[0];
+  if (!row) return null;
+  const { expires, ...user } = row;
+  return { user, expires: Number(expires), key };
+}
+const notifyUser = async (id) => {
+  if (realtime) await realtime.notifyUser(id);
+};
 async function dropSession(req) {
   const token = tokenFrom(req);
   if (!token) return;
+  realtime?.revokeSession(hash(token));
   if (demo) {
     const previous = sessions.get(hash(token));
     if (previous) {
@@ -141,21 +166,8 @@ app.use("/api", (req, res, next) => {
 });
 app.use("/api", async (req, res, next) => {
   try {
-    const token = tokenFrom(req);
-    if (token) {
-      if (demo) {
-        const s = sessions.get(hash(token));
-        if (s && s.expires > Date.now()) req.user = s.user;
-      } else {
-        const row = (
-          await query(
-            "SELECT u.id,u.name,u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>NOW()",
-            [hash(token)],
-          )
-        )[0];
-        if (row) req.user = row;
-      }
-    }
+    const session = await resolveSession(req);
+    if (session) req.user = session.user;
     next();
   } catch (e) {
     next(e);
@@ -283,8 +295,8 @@ app.use("/api", (req, res, next) =>
     ? next()
     : res.status(401).json({ error: "Silakan masuk terlebih dahulu." }),
 );
-app.use("/api/notifications", notificationRouter({ query, demo }));
-app.use("/api/forum", forumRouter({ query, demo }));
+app.use("/api/notifications", notificationRouter({ query, demo, notifyUser }));
+app.use("/api/forum", forumRouter({ query, demo, notifyUser }));
 app.get("/api/articles", (req, res) => res.json(articleSummaries));
 app.get("/api/articles/:slug", (req, res) => {
   const article = articles.find((item) => item.slug === req.params.slug);
@@ -422,12 +434,23 @@ app.use((err, req, res, next) => {
       : "Server belum dapat memproses data. Periksa koneksi database.",
   });
 });
+export function createAppServer() {
+  const server = createServer(app);
+  realtime = attachRealtime(server, {
+    resolveSession,
+    origin: process.env.APP_ORIGIN || "http://127.0.0.1:5173",
+  });
+  return { server, realtime };
+}
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (db) await query("SELECT 1");
-  app.listen(Number(process.env.PORT || 3001), "127.0.0.1", () =>
-    console.log(
-      `API ready: http://127.0.0.1:${process.env.PORT || 3001} (${demo ? "temporary demo" : "MySQL"})`,
-    ),
+  createAppServer().server.listen(
+    Number(process.env.PORT || 3001),
+    "127.0.0.1",
+    () =>
+      console.log(
+        `API ready: http://127.0.0.1:${process.env.PORT || 3001} (${demo ? "temporary demo" : "MySQL"})`,
+      ),
   );
 }
 export async function closeDatabase() {
